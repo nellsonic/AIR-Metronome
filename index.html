@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reliable Tempo Generator — ICU Sound</title>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Automatic Incremental &amp; Randomizing (A.I.R.) Metronome</title>
+<style>
     body { background-color: var(--bg); color: var(--text);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       text-align: center;
@@ -473,7 +474,6 @@ input#volume::-moz-range-thumb {
   cursor: pointer !important;
 }
 </style>
-    
 <style>
 
 /* Sleek circular-dot slider styling (Volume) */
@@ -555,538 +555,315 @@ input#biasSlider::-moz-range-thumb{
 }
 
 </style>
-</head>
-<body></div>
-  <h1>Randomizing & A.I.M. Metronome:</h1>
-  <div id="currentTempoDisplay" style="font-size:1.8rem;font-weight:700;color:var(--accent);margin:.25em 0 .6em;">Current Tempo: <span id="currentTempo">60</span></div>
+<style>
+/*__air_pulse__*/ 
+@keyframes __air_boom { 
+  0%{transform:scale(1);opacity:0.0} 
+  10%{opacity:1} 
+  60%{transform:scale(2.0);opacity:1} 
+  100%{transform:scale(2.8);opacity:0} 
+}
+#__pulse_wrap__ #pulseDot.__boom{animation:__air_boom 280ms ease-out 1;}
+</style><style>
+/* === A.I.R. unified slider skin (non-destructive) === */
+input[type="range"]{
+  -webkit-appearance:none;
+  appearance:none;
+  height: 28px; /* hit target */
+  width: 100%;
+  background: transparent;
+  margin: 4px 0;
+  padding: 0;
+}
+/* Track */
+input[type="range"]::-webkit-slider-runnable-track{
+  height: 6px;
+  background: linear-gradient(180deg, #2b2f3a 0%, #232730 100%);
+  border: 1px solid #3a3f4c;
+  border-radius: 999px;
+}
+input[type="range"]::-moz-range-track{
+  height: 6px;
+  background: linear-gradient(180deg, #2b2f3a 0%, #232730 100%);
+  border: 1px solid #3a3f4c;
+  border-radius: 999px;
+}
+input[type="range"]::-ms-track{
+  height: 6px;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+input[type="range"]::-ms-fill-lower,
+input[type="range"]::-ms-fill-upper{
+  background: linear-gradient(180deg, #2b2f3a 0%, #232730 100%);
+  border: 1px solid #3a3f4c;
+  border-radius: 999px;
+}
+
+/* Thumb */
+input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width: 18px; height: 18px;
+  background: #9bd0ff;
+  border: 1px solid #1e2430;
+  border-radius: 50%;
+  margin-top: -6px; /* centers on 6px track */
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.25);
+}
+input[type="range"]::-moz-range-thumb{
+  width: 18px; height: 18px;
+  background: #9bd0ff;
+  border: 1px solid #1e2430;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.25);
+}
+input[type="range"]::-ms-thumb{
+  width: 18px; height: 18px;
+  background: #9bd0ff;
+  border: 1px solid #1e2430;
+  border-radius: 50%;
+}
+
+/* Focus/hover */
+input[type="range"]:hover::-webkit-slider-thumb,
+input[type="range"]:focus::-webkit-slider-thumb{
+  background: #c3e4ff;
+}
+input[type="range"]:hover::-moz-range-thumb,
+input[type="range"]:focus::-moz-range-thumb{
+  background: #c3e4ff;
+}
+input[type="range"]:focus{ outline: none; }
+
+/* Disabled */
+input[type="range"]:disabled::-webkit-slider-thumb,
+input[type="range"]:disabled::-moz-range-thumb,
+input[type="range"]:disabled::-ms-thumb{
+  background:#6f7a8d;
+  border-color:#2b3342;
+}
+input[type="range"]:disabled::-webkit-slider-runnable-track,
+input[type="range"]:disabled::-moz-range-track{
+  background:#2a2f39;
+  border-color:#384152;
+}
+
+/* Optional compact class for narrow panels */
+.compact-range input[type="range"]{
+  height: 22px;
+}
+.compact-range input[type="range"]::-webkit-slider-thumb{
+  width: 14px; height: 14px; margin-top:-4px;
+}
+.compact-range input[type="range"]::-moz-range-thumb{
+  width: 14px; height: 14px;
+}
+</style><style>
+/* === A.I.R. Slider Clean Skin (uniform look, minimal overrides) === */
+:root{
+  --air-slider-track:#44506a;
+  --air-slider-track-dim:#3a455c;
+  --air-slider-thumb:#cfe6ff;
+  --air-slider-thumb-border:#162031;
+}
+input[type="range"].air-slider{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:28px;
+  background:transparent;
+  margin:6px 0;
+}
+/* Track */
+input[type="range"].air-slider::-webkit-slider-runnable-track{
+  height:6px;
+  background:linear-gradient(180deg,var(--air-slider-track) 0%,var(--air-slider-track-dim) 100%);
+  border-radius:999px;
+}
+input[type="range"].air-slider::-moz-range-track{
+  height:6px;
+  background:linear-gradient(180deg,var(--air-slider-track) 0%,var(--air-slider-track-dim) 100%);
+  border-radius:999px;
+}
+/* Thumb */
+input[type="range"].air-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--air-slider-thumb);
+  border:1px solid var(--air-slider-thumb-border);
+  margin-top:-5px;
+  box-shadow:0 0 0 2px rgba(0,0,0,.2);
+}
+input[type="range"].air-slider::-moz-range-thumb{
+  width:16px;height:16px;border-radius:50%;
+  background:var(--air-slider-thumb);
+  border:1px solid var(--air-slider-thumb-border);
+  box-shadow:0 0 0 2px rgba(0,0,0,.2);
+}
+input[type="range"].air-slider:focus{outline:none}
+/* Compact option */
+.compact-range input[type="range"].air-slider{height:22px}
+.compact-range input[type="range"].air-slider::-webkit-slider-thumb{width:14px;height:14px;margin-top:-4px}
+.compact-range input[type="range"].air-slider::-moz-range-thumb{width:14px;height:14px}
+</style><style>
+/* === A.I.R. Custom Slider (pixel-consistent across browsers) === */
+.air-skin{position:relative; display:block; width:100%; height:28px; touch-action:none; user-select:none}
+.air-skin .air-track{position:absolute; left:0; right:0; top:50%; height:6px; transform:translateY(-50%);
+  background:linear-gradient(180deg,#44506a 0%, #3a455c 100%); border-radius:999px;}
+.air-skin .air-thumb{position:absolute; top:50%; width:16px; height:16px; transform:translate(-50%,-50%);
+  border-radius:50%; background:#cfe6ff; border:1px solid #162031; box-shadow:0 0 0 2px rgba(0,0,0,.2);}
+/* focus halo */
+.air-skin.is-focus .air-thumb{box-shadow:0 0 0 3px rgba(147,197,253,.45), 0 0 0 2px rgba(0,0,0,.2);}
+/* disabled */
+.air-skin.is-disabled .air-track{opacity:.55}
+.air-skin.is-disabled .air-thumb{background:#9fb2c9; border-color:#2b3342}
+/* hide the native slider but keep it in flow for layout width */
+.air-skin input[type=range].air-native{
+  position:absolute; inset:0; width:100%; height:100%; opacity:0; pointer-events:none;
+}
+</style><style>
+/* Keep custom sliders full-row and above any rules beneath */
+.air-skin{ display:block; width:100%; position:relative; z-index:2; margin:14px 0; }
+.air-skin .air-track{ z-index:2; }
+.air-skin .air-thumb{ z-index:3; }
+/* Give hr extra breathing room so it never visually overlaps sliders */
+hr{ margin-top:26px !important; margin-bottom:26px !important; }
+/* If any hr sits immediately above/below a slider, push it further */
+hr + .air-skin{ margin-top:10px; }
+.air-skin + hr{ margin-top:20px; }
+</style><style>
+/* Ensure native range is fully invisible—no background, no shadow, no outline */
+.air-skin input[type=range].air-native{
+  position:absolute; inset:0; width:100%; height:100%;
+  opacity:0 !important;
+  -webkit-appearance:none !important;
+  -moz-appearance:none !important;
+  appearance:none !important;
+  background:transparent !important;
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:none !important;
+  filter:none !important;
+  pointer-events:none !important;
+}
+/* Some frameworks wrap ranges with a pill background using ::before/::after—neutralize if present */
+.air-skin::before,
+.air-skin::after{ content:none !important; }
+</style><style>
+/* === A.I.R. tight, responsive sliders ===
+   Goal: clearly shorter than other controls, looks good on any screen.
+*/
+.air-skin{
+  /* center, and keep modest width */
+  width: clamp(240px, 56%, 520px);
+  margin: 10px auto;
+  height: 22px;
+}
+.air-skin .air-track{ height:4px; }
+.air-skin .air-thumb{ width:12px; height:12px; }
+/* Avoid overlap with nearby rules */
+.air-skin + hr{ margin-top: 22px; }
+hr + .air-skin{ margin-top: 12px; }
+/* Touch-friendly on phones/tablets while staying compact */
+@media (pointer: coarse), (max-width: 640px){
+  .air-skin{
+    width: clamp(220px, 88vw, 520px); /* fill most of small screens without edge-to-edge */
+    height: 26px;
+  }
+  .air-skin .air-track{ height:5px; }
+  .air-skin .air-thumb{ width:14px; height:14px; }
+}
+</style></head>
+<body>
+<h1>Automatic Incremental &amp; Randomizing (A.I.R.) Metronome</h1>
+<div id="currentTempoDisplay" style="font-size:1.8rem;font-weight:700;color:var(--accent);margin:.25em 0 .6em;">Current Tempo: <span id="currentTempo">60</span></div>
 <div class="section" id="useCurrSection" style="text-align:center;">
-    <input id="useCurrentAsStart" type="checkbox">
+<input id="useCurrentAsStart" type="checkbox"/>
 <label for="useCurrentAsStart">Use Current Tempo as Start Tempo</label>
-  </div>
-  <div class="pulse-wrap"><div id="pulseDot" class="pulse-dot"></div></div>
-
-
-  <div class="section" id="themeRow" style="text-align:right;">
-    <label for="themeSel" style="margin-right:.35rem;">Theme:</label>
-    <select id="themeSel">
-      <option value="">Default</option>
-      <option value="blue">Blue</option>
-      <option value="yellow">Yellow</option>
-      <option value="green">Green</option>
-      <option value="red">Red</option>
-    </select>
-  </div>
-
-
-  <div class="section">
-    <label for="startTempo">Start Tempo:</label>
-<input type="number" id="startTempo" class="n4" min="10" max="300" step="0.5" value="60">
-    <label for="minTempo">Min Tempo:</label>
-<input type="number" id="minTempo" class="n4" min="10" max="300" step="0.5" value="40">
-    <label for="maxTempo">Max Tempo:</label>
-<input type="number" id="maxTempo" class="n4" min="10" max="300" step="0.5" value="120">
-  </div>
-  <div class="section" id="halfTemposRow">
-    <input type="checkbox" id="halfBeats">
-    <label for="halfBeats">Use Half-Beat Tempo Increments</label>
-  </div>
-
-  
-
-  <div class="section">
-    <label for="minChange">Min Change:</label>
-<input type="number" id="minChange" class="n4" min="0" max="100" step="0.5" value="1">
-    <label for="maxChange">Max Change:</label>
-<input type="number" id="maxChange" class="n4" min="0" max="100" step="0.5" value="5">
-    
-  </div>
-
-  <div class="section">
-    <label for="beatsPerTempo">Beats per Tempo:</label>
-<input type="number" id="beatsPerTempo" min="1" step="1" value="4" class="n4">
-    <label for="subdivision">Subdivision:</label>
-    <select id="subdivision">
-      <option value="1">Quarter Notes</option>
-      <option value="2">8th Notes</option>
-      <option value="3">Triplets</option>
-      <option value="4">16th Notes</option>
-      <option value="5">5's</option>
-      <option value="6">6's</option>
-      <option value="7">7's</option>
-    </select>
-  </div>
-
-    <div class="section">
-    <label for="mode">Mode:</label>
-    <select id="mode">
-      <option value="random">Random</option>
-      <option value="uponly">Up only</option>
-      <option value="downonly">Down only</option>
-    </select>
-    <button id="biasDirBtn" type="button" class="inline">Bias: Up</button>
-    <input type="number" id="biasPct" min="0" max="100" step="1" value="0" class="n4"> <input type="range" id="biasSlider" min="-100" max="100" step="1" disabled style="vertical-align:middle; width:240px;"> <input type="number" id="biasNum" min="-100" max="100" step="1" style="width:64px; margin-left:.5rem;">
+</div>
+<div class="pulse-wrap"><div class="pulse-dot" id="pulseDot"></div></div>
+<div class="section" id="themeRow" style="text-align:right;">
+<label for="themeSel" style="margin-right:.35rem;">Theme:</label>
+<select id="themeSel">
+<option value="">Default</option>
+<option value="blue">Blue</option>
+<option value="yellow">Yellow</option>
+<option value="green">Green</option>
+<option value="red">Red</option>
+</select>
+</div>
+<div class="section">
+<label for="startTempo">Start Tempo:</label>
+<input class="n4" id="startTempo" max="300" min="10" step="0.5" type="number" value="60"/>
+<label for="minTempo">Min Tempo:</label>
+<input class="n4" id="minTempo" max="300" min="10" step="0.5" type="number" value="40"/>
+<label for="maxTempo">Max Tempo:</label>
+<input class="n4" id="maxTempo" max="300" min="10" step="0.5" type="number" value="120"/>
+</div>
+<div class="section" id="halfTemposRow">
+<input id="halfBeats" type="checkbox"/>
+<label for="halfBeats">Use Half-Beat Tempo Increments</label>
+</div>
+<div class="section">
+<label for="minChange">Min Change:</label>
+<input class="n4" id="minChange" max="100" min="0" step="0.5" type="number" value="1"/>
+<label for="maxChange">Max Change:</label>
+<input class="n4" id="maxChange" max="100" min="0" step="0.5" type="number" value="5"/>
+</div>
+<div class="section">
+<label for="beatsPerTempo">Beats per Tempo:</label>
+<input class="n4" id="beatsPerTempo" min="1" step="1" type="number" value="4"/>
+<label for="subdivision">Subdivision:</label>
+<select id="subdivision">
+<option value="1">Quarter Notes</option>
+<option value="2">8th Notes</option>
+<option value="3">Triplets</option>
+<option value="4">16th Notes</option>
+<option value="5">5's</option>
+<option value="6">6's</option>
+<option value="7">7's</option>
+</select>
+</div>
+<div class="section">
+<label for="mode">Mode:</label>
+<select id="mode">
+<option value="random">Random</option>
+<option value="uponly">Up only</option>
+<option value="downonly">Down only</option>
+</select>
+<button class="inline" id="biasDirBtn" type="button">Bias: Up</button>
+<input class="n4" id="biasPct" max="100" min="0" step="1" type="number" value="0"/> <input disabled="" id="biasSlider" max="100" min="-100" step="1" style="vertical-align:middle; width:240px;" type="range"/> <input id="biasNum" max="100" min="-100" step="1" style="width:64px; margin-left:.5rem;" type="number"/>
 <div class="biasNote" style="display:block;text-align:center;font-size:0.9em;color:var(--text-muted,#aaa);margin-top:0.5rem;line-height:1.3;">negative = more likely to go down, positive = more likely to go up</div>
 <label for="biasPct">Bias %</label>
-  </div>
+</div>
 <div class="section">
-    
-    <input type="checkbox" id="countIn">
+<input id="countIn" type="checkbox"/>
 <label for="countIn">Use Count-In Beats</label>
-    <label for="countInBeats">Count-In Beats:</label>
-<input type="number" id="countInBeats" min="1" step="1" value="4" class="n4">
-    <input type="checkbox" id="countInSubdivs">
+<label for="countInBeats">Count-In Beats:</label>
+<input class="n4" id="countInBeats" min="1" step="1" type="number" value="4"/>
+<input id="countInSubdivs" type="checkbox"/>
 <label for="countInSubdivs">Include Subdivisions in Count-In</label>
-  </div>
-
-  <div class="section" id="volumeSection">
-    <input type="range" id="volume" min="0" max="100" step="1" value="50" >
+</div>
+<div class="section" id="volumeSection">
+<input id="volume" max="100" min="0" step="1" type="range" value="50"/><label style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:0.9em;opacity:.9"><input checked="checked" id="liveVolPreview" type="checkbox"/> Live volume preview when stopped</label>
 <label for="volume">Volume:</label>
-    <input type="number" id="volumeNum" min="0" max="100" step="1" value="\1" style="width:64px; margin-left:.5rem;">
-    <label class="inline" style="margin-left:10px;">
-      <input id="allowFullVolume" type="checkbox">
+<input id="volumeNum" max="100" min="0" step="1" style="width:64px; margin-left:.5rem;" type="number" value="\1"/>
+<label class="inline" style="margin-left:10px;">
+<input id="allowFullVolume" type="checkbox"/>
       Allow full volume (louder clicks)
     </label>
-  </div>
-
-  <div class="section" id="pulseSection">
-    <label class="inline" for="showPulse">Show pulse dot</label>
-    <input id="showPulse" type="checkbox" checked>
-  </div>
-  <div class="section">
-    <button id="startStop">Start</button>
-    <span class="inline muted" id="status"></span>
-      </div>
-
-  <script>
-  const $ = id => document.getElementById(id);
-
-  
-  // === Persistence helpers ===
-  const LS_KEY_CURR = "RM_currentTempo";
-  const LS_KEY_MODE = "RM_mode";
-  const LS_KEY_BIAS_PCT = "RM_biasPct";
-  const LS_KEY_BIAS_SIGN = "RM_biasSign";
-
-  function saveMode(){ try{ localStorage.setItem(LS_KEY_MODE, $("mode").value); }catch(e){} }
-  function loadMode(){ try{ return localStorage.getItem(LS_KEY_MODE) || "random"; }catch(e){ return "random"; } }
-
-  function saveBiasPct(){ try{ localStorage.setItem(LS_KEY_BIAS_PCT, String(+$("biasPct").value||0)); }catch(e){} }
-  function loadBiasPct(){ try{ const v = parseFloat(localStorage.getItem(LS_KEY_BIAS_PCT)); return isNaN(v)?0:v; }catch(e){ return 0; } }
-
-  function saveBiasSign(){ try{ localStorage.setItem(LS_KEY_BIAS_SIGN, String(biasSign)); }catch(e){} }
-  function loadBiasSign(){ try{ const v = parseInt(localStorage.getItem(LS_KEY_BIAS_SIGN)); return (v===-1)?-1:1; }catch(e){ return 1; } }
-
-  const LS_KEY_USECURR = "RM_useCurrentAsStart";
-
-  // === Persist all settings except volume ===
-  const P_NUM_IDS = ["startTempo","minTempo","maxTempo","minChange","maxChange","beatsPerTempo","countInBeats"];
-  const P_SEL_IDS = ["subdivision","mode"];
-  const P_BOOL_IDS = ["halfBeats","countIn","showPulse","useCurrentAsStart","allowFullVolume","countInSubdivs"]; // persist allowFullVolume; exclude "volume"
-
-  function lsKeyFor(id){ return "RM_" + id; }
-
-  function saveSetting(id){
-    const el = $(id); if(!el) return;
-    const key = lsKeyFor(id);
-    if (el.tagName === "SELECT"){
-      try{ localStorage.setItem(key, el.value); }catch(e){}
-    } else if (el.type === "checkbox"){
-      try{ localStorage.setItem(key, el.checked ? "1" : "0"); }catch(e){}
-    } else {
-      try{ localStorage.setItem(key, String(el.value)); }catch(e){}
-    }
-  }
-  function loadSetting(id){
-    const el = $(id); if(!el) return;
-    const key = lsKeyFor(id);
-    try{
-      const v = localStorage.getItem(key);
-      if (v === null) return;
-      if (el.tagName === "SELECT"){
-        el.value = v;
-      } else if (el.type === "checkbox"){
-        el.checked = (v === "1");
-      } else {
-        el.value = v;
-      }
-    }catch(e){}
-  }
-
-  function attachPersistence(){
-    P_NUM_IDS.forEach(id=>{
-      const el = $(id); if(!el) return;
-      el.addEventListener("input", ()=> saveSetting(id));
-      el.addEventListener("change", ()=> saveSetting(id));
-    });
-    P_SEL_IDS.forEach(id=>{
-      const el = $(id); if(!el) return;
-      el.addEventListener("change", ()=> saveSetting(id));
-    });
-    P_BOOL_IDS.forEach(id=>{
-      const el = $(id); if(!el) return;
-      el.addEventListener("change", ()=> saveSetting(id));
-    });
-  }
-
-  function loadAllSettings(){
-    // Load primitive fields first
-    [...P_NUM_IDS, ...P_SEL_IDS, ...P_BOOL_IDS].forEach(loadSetting);
-    // Apply dependent UI updates
-    applyHalfUI();
-    updatePulseVisibility?.();
-    applyModeUI?.();
-    // Force Allow Full Volume off at load
-    if ($("allowFullVolume")) $("allowFullVolume").checked = false;
-
-    mirrorCurrentToStart?.();
-  }
-
-  // Load on DOM ready (before other 'load' handlers), then attach listeners
-  window.addEventListener("DOMContentLoaded", ()=>{
-    loadAllSettings();
-    attachPersistence();
-  });
-
-
-  function saveCurrentTempo(){
-    try { localStorage.setItem(LS_KEY_CURR, String(currentTempo)); } catch(e){}
-  }
-  function loadCurrentTempo(){
-    try {
-      const v = parseFloat(localStorage.getItem(LS_KEY_CURR));
-      return isNaN(v) ? null : v;
-    } catch(e){ return null; }
-  }
-  function saveUseCurrFlag(){
-    try { localStorage.setItem(LS_KEY_USECURR, ($("useCurrentAsStart")?.checked ? "1":"0")); } catch(e){}
-  }
-  function loadUseCurrFlag(){
-    try { return localStorage.getItem(LS_KEY_USECURR) === "1"; } catch(e){ return false; }
-  }
-
-  // === ICU click sound (main) ===
-  // Distinct count-in click (SUB_B64 from ICU)
-  const SUB_B64 = `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`;
-
-  const MAIN_B64 = `UklGRkYEAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YSIEAAAAADRk1H7/f/9//3//f/9//38Rf4xlTQMwnWuBAIAAgACAAIAAgACAs4ApmWb5XWFSfv9//3//f/9//3//f4R/E2joCSSg84EAgACAAIAAgACAAIBGgLmW0PJPXsN9/3//f/9//3//f/9/7H9ranIQUKOJggCAAIAAgACAAIAAgACAepRK7OhaDH3/f/9//3//f/9//3/xf3prZBZDqPSDAIAAgACAAIAAgACAVoC+lBjneVTwev9//3//f/9//3//f1p/+mpDG+GuSIYAgACAAIAAgACAAID9gFuVkuKzTV94/3//f/9//3//f/9/o34+anEfyrUZiQCAAIAAgACAAIAAgMWBOJa13qtGS3X/f/9//3//f/9//3/GfUJp/iLmvHWMAIAAgACAAIAAgACAt4JTl3vbgT+kcUZ//3//f/9//3//f7x8AWjlJRTEaJCLgQCAAIAAgACAAIDdg7iY5dhVOGNthn3/f/9//3//f/9/eXt2ZiwoPMv6lIaDAIAAgACAAIAAgEGFbZro1j0xf2hKe/9//3//f/9//3/weZdk4Ck40jGaCIYAgACAAIAAgCuA84Z7nIDVXir2Ynt4YX//f/9//38zfxF4WGL8KvPYCaAsiYSBAIAAgACAhIEEie2eqtTNI9Fc/HRzff9//3//f6t9yHWuX4grVd96pgyNvIN4gACAU4BDg4qL0qFl1KMdGla0cOd6mX6Wf9d+rXv9coxcgytI5XKtwpGmhn2CVIEfgoeFoY41pbTU7RfjToprk3c9fJV9wXwYeZRv4FjvKrrq37Rnl3CKO4Wug4yEd4hnki6pjtW8EkZHZ2VIcw151nrveb91aGuYVMkpp++kvAqeSI/tiOWG04dGjAOXy63/1hYOZT8/XtVtyHQWdyN2a3FSZqFPFSj/853EtaVkldiNQos3jDCRnZwhswHZDApdNxFWBWcnbwdyEHHaayVg50nEJcP3rcxirvKcRZQakQ+Sepdlo0W5nduZBk4v7EytXtdnTWteasFktVhTQ9wi5fqv1P23GqaJnNGYuJl1n4yrTsDS3sQDXCfjQrRUjF6CYqRh01vQT9Y7WB9o/YTcasLqsOimx6KVo2qpO7VIyKvijwGsHx04D0kMU0dXiVbGUE5FWzMvG0r/D+R5zVq9k7NTrwSwn7WSwELRIucAAFEY1CzeOzhFXkm8SGNDHDngKV8WjAA06+7YQcuLwp6+NL81xKDNPdtF7BH/YhFAIVktKzW6OCo4nTM9K2If5xAsAeTxkORJ2pHTidAV0RrVT9w35hLyvv70CqAV3h1GI6wlEyWwIc4b8hPGCiwBDPgm8BTqLeaV5Dnl7+dk7BfyiPgR/xUFKwrtDSoQ2BAWEBYOLQurBwIEjACh/Wz7Fvqa+ef50PoX/Hf9uf6d/w==`;
-
-  // Utility: snap to whole or half values depending on UI toggle
-  const numIds = ["startTempo","minTempo","maxTempo","minChange","maxChange"];
-  function snap(v, halves){ const step = halves?0.5:1; return Math.round(v/step)*step; }
-  function applyHalfUI(){const halves = $("halfBeats").checked;
-    numIds.forEach(id=>{
-      const el=$(id);
-      el.step = halves?"0.5":"1";
-      const val = parseFloat(el.value||0);
-      el.value = snap(val, halves).toFixed(halves?1:0);
-    });
-    $("currentTempo").textContent = snap(parseFloat($("currentTempo").textContent||0), halves).toFixed(halves?1:0);
-  
-    mirrorCurrentToStart();
-}
-  $("halfBeats").addEventListener("change", applyHalfUI);
-  window.addEventListener("DOMContentLoaded", applyHalfUI);
-
-  
-  // Mirror: if enabled, copy currentTempo -> startTempo immediately
-  function mirrorCurrentToStart(){
-    if ($("useCurrentAsStart") && $("useCurrentAsStart").checked){
-      $("startTempo").value = currentTempo.toFixed($("halfBeats").checked?1:0);
-    }
-  }
-
-
-  // === Bias direction toggle ===
-  let biasSign = 1; // +1 = Up, -1 = Down
-  function updateBiasButton(){
-    const btn = $("biasDirBtn");
-    if(!btn) return;
-    btn.textContent = biasSign > 0 ? "Bias: Up" : "Bias: Down";
-  }
-  window.addEventListener("load", updateBiasButton);
-  $("biasDirBtn").addEventListener("click", ()=>{ biasSign *= -1; updateBiasButton(); });
-
-  
-  // === Mode & bias UI state ===
-  function applyModeUI(){
-    const mode = $("mode").value;
-    const btn = $("biasDirBtn");
-    const pct = $("biasPct");
-    if(mode === "random"){
-      // restore saved biasPct and biasSign
-      const savedPct = loadBiasPct();
-      biasSign = loadBiasSign();
-      if(pct){ pct.disabled = false; pct.value = String(savedPct); }
-      if(btn){ btn.disabled = false; updateBiasButton(); }
-    }else{
-      // freeze bias controls and display 0%
-      if(pct){ pct.disabled = true; pct.value = "0"; }
-      if(btn){ btn.disabled = true; btn.textContent = "Bias: (disabled)"; }
-    }
-  }
-
-  // Load mode & bias on startup
-  window.addEventListener("load", ()=>{
-    // mode
-    const m = loadMode();
-    if($("mode")) $("mode").value = m;
-    // bias values (only take effect in Random via applyModeUI)
-    const savedPct = loadBiasPct();
-    biasSign = loadBiasSign();
-    if($("biasPct")) $("biasPct").value = String(savedPct);
-    updateBiasButton();
-    // finally apply UI enable/disable
-    applyModeUI();
-  });
-
-  // Save on changes
-  $("mode").addEventListener("change", ()=>{ saveMode(); applyModeUI(); });
-  $("biasPct").addEventListener("input", ()=>{ saveBiasPct(); });
-  // biasSign saved when toggled
-  const _origBiasClick = $("biasDirBtn").onclick;
-  $("biasDirBtn").addEventListener("click", ()=>{ saveBiasSign(); });
-
-  
-  // === Theme selection/persistence ===
-  const LS_KEY_THEME = "RM_theme";
-  function applyTheme(value){
-    const v = value || "";
-    try{
-      if(v) document.documentElement.setAttribute("data-theme", v);
-      else document.documentElement.removeAttribute("data-theme");
-    }catch(e){}
-  }
-  function saveTheme(){
-    try{ localStorage.setItem(LS_KEY_THEME, $("themeSel").value || ""); }catch(e){}
-    applyTheme($("themeSel").value);
-  }
-  function loadTheme(){
-    try{ return localStorage.getItem(LS_KEY_THEME) || ""; }catch(e){ return ""; }
-  }
-  window.addEventListener("DOMContentLoaded", ()=>{
-    const t = loadTheme();
-    if($("themeSel")) $("themeSel").value = t;
-    applyTheme(t);
-    $("themeSel")?.addEventListener("change", saveTheme);
-  });
-
-  // === Web Audio (master gain + decoded click buffer) ===
-  let audioCtx = null, masterGain = null, clickBuf = null, countBuf = null;
-
-  async function ensureAudio(){ 
-    if(!audioCtx){
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      masterGain = audioCtx.createGain();
-      masterGain.connect(audioCtx.destination);
-    }
-    if(audioCtx.state === "suspended"){ try{ await audioCtx.resume(); }catch(_ ){} }
-    if(!clickBuf){ clickBuf = await decodeB64ToBuffer(MAIN_B64); }
-    if(!countBuf && SUB_B64){ countBuf = await decodeB64ToBuffer(SUB_B64); }
-    // apply current slider value
-    setEffectiveGainFromSlider();
-  }
-
-  async function decodeB64ToBuffer(b64){ 
-    if(!b64) return null;
-    try{ 
-      const bin = atob(b64.trim());
-      const len = bin.length;
-      const arr = new Uint8Array(len);
-      for(let i=0;i<len;i++) arr[i] = bin.charCodeAt(i);
-      return await new Promise((resolve, reject)=>{
-        audioCtx.decodeAudioData(arr.buffer, resolve, reject);
-      });
-    }catch(e){ console.warn("decode failed", e); return null; }
-  }
-
-  
-  function playCountClick(){ 
-    if(!audioCtx || !countBuf){ playClick(true); return; } // fallback to accent if no alt sample
-    const src = audioCtx.createBufferSource();
-    src.buffer = countBuf;
-    const g = audioCtx.createGain();
-    g.gain.value = 1.8; // maximum clarity
-    src.connect(g).connect(masterGain);
-    try{ src.start(); }catch(_ ){} 
-  }
-
-  function playClick(accent){ 
-    if(!audioCtx || !clickBuf) return;
-    const src = audioCtx.createBufferSource();
-    src.buffer = clickBuf;
-    const g = audioCtx.createGain();
-    // Accented beats a bit louder
-    g.gain.value = accent ? 1.0 : 0.45;
-    src.connect(g).connect(masterGain);
-    try{ src.start(); }catch(_ ){} 
-  }
-
-  // === Volume handling (ICU-style) ===
-  function setEffectiveGainFromSlider(){
-    const v = (+$("volume").value||0);
-    const allowFull = !!$("allowFullVolume")?.checked;
-    const raw = Math.max(0, Math.min(1, v/100));
-    const SAFE_ATTEN = 0.4; // approx inverse of louder sample
-    const eff = allowFull ? raw : (raw * SAFE_ATTEN);
-    if(masterGain) masterGain.gain.value = eff;
-  }
-
-  // Initialize displayed value and effective gain
-  // Load persisted current tempo and checkbox state on startup
-  window.addEventListener("load", ()=>{
-    const saved = loadCurrentTempo();
-    if(saved && isFinite(saved)){
-      currentTempo = Math.max(10, saved);
-      $("currentTempo").textContent = currentTempo.toFixed($("halfBeats").checked?1:0);
-    saveCurrentTempo();
-    if ($("useCurrentAsStart") && $("useCurrentAsStart").checked){ $("startTempo").value = currentTempo.toFixed($("halfBeats").checked?1:0); }
-          saveCurrentTempo();
-          if ($("useCurrentAsStart") && $("useCurrentAsStart").checked){ $("startTempo").value = currentTempo.toFixed($("halfBeats").checked?1:0); }
-    }
-    const flag = loadUseCurrFlag();
-    if($("useCurrentAsStart")) $("useCurrentAsStart").checked = !!flag;
-    if(flag){ mirrorCurrentToStart(); }
-  });
-  // Persist checkbox state when toggled
-  $("useCurrentAsStart")?.addEventListener("change", ()=>{ saveUseCurrFlag(); mirrorCurrentToStart(); });
-
-  window.addEventListener("load", ()=>{
-    $("volVal").textContent = String(Math.round(+$("volume").value||0));
-    setEffectiveGainFromSlider();
-  });
-
-  // Live updates
-  $("allowFullVolume")?.addEventListener("change", ()=>{ setEffectiveGainFromSlider(); });
-  $("volume").addEventListener("input", ()=>{
-    const v = (+$("volume").value||0);
-    $("volVal").textContent = String(Math.round(v));
-    setEffectiveGainFromSlider();
-  });
-  $("volume").addEventListener("change", ()=>{ $("volume").blur(); });
-  // === Pulse dot handling ===
-  function pulseBoom(){
-    const chk = $("showPulse");
-    const dot = $("pulseDot");
-    if(!dot || !chk || !chk.checked) return;
-    dot.classList.remove("boom");
-    // reflow to restart animation
-    void dot.offsetWidth;
-    dot.classList.add("boom");
-  }
-  function updatePulseVisibility(){
-    const dot = $("pulseDot");
-    if(!dot) return;
-    const on = !!$("showPulse")?.checked;
-    dot.style.display = on ? "block" : "none";
-  }
-  window.addEventListener("load", updatePulseVisibility);
-  $("showPulse").addEventListener("change", updatePulseVisibility);
-
-
-  
-  function getCountInBeats(){
-    const v = Math.max(1, parseInt($("countInBeats")?.value||4));
-    return v;
-  }
-
-  // === State ===
-  let running=false;
-  let tickerTimer=null;
-  let currentTempo = 60;
-  let subIdx = 0;           // subdivision index within a beat
-  let beatInBlock = 0;      // beat index within current block
-  let counting = false;     // count-in phase flag
-
-  function clamp(v,min,max){ return Math.min(max, Math.max(min,v)); }
-
-  function computeNextTempo(){
-    const halves = $("halfBeats").checked;
-    const minT = parseFloat($("minTempo").value)||40;
-    const maxT = parseFloat($("maxTempo").value)||120;
-    const minC = Math.max(0, parseFloat($("minChange").value)||1);
-    const maxC = Math.max(minC, parseFloat($("maxChange").value)||3);
-    const stepBase = minC + Math.random()*(maxC-minC);
-    const step = snap(stepBase, halves);
-    const mode = $("mode").value;
-    const absBias = Math.max(0, Math.min(100, parseFloat($("biasPct").value)||0));
-let dir = 0;
-if (mode==="uponly") dir=1; else if (mode==="downonly") dir=-1; else {
-  const pUp = Math.max(0, Math.min(1, (absBias * biasSign + 100) / 200));
-  dir = (Math.random() < pUp) ? 1 : -1;
-}
-    let next = currentTempo + dir*step;
-    next = clamp(snap(next, halves), minT, maxT);
-    return Math.max(10, next);
-  }
-
-  function tick(){
-    if(!running) return;
-
-    // Read live controls (so changes take effect immediately)
-    const subdiv = Math.max(1, parseInt($("subdivision").value)||1);
-    const beatsPerTempo = Math.max(1, parseInt($("beatsPerTempo").value)||4);
-    const countBeats = getCountInBeats();
-// Sound for this tick
-    if (counting){
-      if (subIdx===0){ playCountClick(); pulseBoom(); } // main beat of count-in
-      else {
-        if ($("countInSubdivs")?.checked) { playClick(false); pulseBoom(); }
-      }
-    } else {
-      if (subIdx===0) pulseBoom();
-      playClick(subIdx===0);           // accent on the beat, lighter on subs
-    }
-
-    // Advance indices
-    subIdx = (subIdx + 1) % subdiv;
-    if (subIdx === 0){
-      beatInBlock++;
-      if (beatInBlock >= (counting ? countBeats : beatsPerTempo)){
-        beatInBlock = 0;
-        if (counting){
-          counting = false; // finished count-in, enter main block
-        } else {
-          currentTempo = computeNextTempo();
-          $("currentTempo").textContent = currentTempo.toFixed($("halfBeats").checked?1:0);
-          counting = $("countIn").checked; // decide next block type live
-        }
-      }
-    }
-
-    // Schedule next tick using *current* tempo/subdivision so changes apply immediately
-    const msPerSub = (60000 / currentTempo) / subdiv;
-    tickerTimer = setTimeout(tick, msPerSub);
-  }
-
-  async function start(){
-    if(running) return;
-    await ensureAudio();
-    applyHalfUI();
-    currentTempo = clamp(
-      snap(parseFloat($("startTempo").value)||60, $("halfBeats").checked),
-      parseFloat($("minTempo").value)||40,
-      parseFloat($("maxTempo").value)||120
-    );
-    $("currentTempo").textContent = currentTempo.toFixed($("halfBeats").checked?1:0);
-    subIdx = 0; beatInBlock = 0; counting = $("countIn").checked;
-    running=true;
-    $("startStop").textContent="Stop";
-    $("status").textContent="Running";
-    tick();
-  }
-  function stop(){
-    if(!running) return;
-    running=false;
-    clearTimeout(tickerTimer);
-    $("startStop").textContent="Start";
-    $("status").textContent="";
-    saveCurrentTempo();
-  }
-
-  $("startStop").addEventListener("click", ()=> running?stop():start());
-  window.addEventListener("keydown", (e)=>{ if(e.code==="Space"){ e.preventDefault(); running?stop():start(); }});
-  </script>
-
+</div>
+<div class="section" id="pulseSection">
+<label class="inline" for="showPulse">Show pulse dot</label>
+<input checked="" id="showPulse" type="checkbox"/>
+</div>
+<div class="section">
+<button id="startStop">Start</button>
+<span class="inline muted" id="status"></span>
+</div>
 <script>
 // Enforce: maxChange cannot be smaller than minChange
 (function(){
@@ -1119,11 +896,6 @@ if (mode==="uponly") dir=1; else if (mode==="downonly") dir=-1; else {
   window.addEventListener('DOMContentLoaded', enforce);
 })();
 </script>
-
-
-
-
-
 <script>
 (function(){
   function setVolVars(){
@@ -1146,8 +918,6 @@ if (mode==="uponly") dir=1; else if (mode==="downonly") dir=-1; else {
   }, true);
 })();
 </script>
-
-
 <script>
 (function(){
   function setVolPct(){
@@ -1169,8 +939,6 @@ if (mode==="uponly") dir=1; else if (mode==="downonly") dir=-1; else {
   }
 })();
 </script>
-
-
 <script>
 (function(){
   function setVolPct(){
@@ -1191,8 +959,6 @@ if (mode==="uponly") dir=1; else if (mode==="downonly") dir=-1; else {
   }
 })();
 </script>
-
-
 <script>
 (function(){
   function $(id){ return document.getElementById(id); }
@@ -1219,8 +985,6 @@ if (mode==="uponly") dir=1; else if (mode==="downonly") dir=-1; else {
   window.addEventListener("load", gateBias);
 })();
 </script>
-
-
 <script>
 (function(){
   function clamp(v, min, max){ v = +v; if (isNaN(v)) return min; return Math.min(max, Math.max(min, v)); }
@@ -1251,8 +1015,6 @@ if (mode==="uponly") dir=1; else if (mode==="downonly") dir=-1; else {
   window.addEventListener('load', bindVolumeBox);
 })();
 </script>
-
-
 <script>
 (function(){
   function halfStep(){ var hb=document.getElementById('halfBeats'); return hb && hb.checked ? 0.5 : 1; }
@@ -1297,8 +1059,6 @@ if (mode==="uponly") dir=1; else if (mode==="downonly") dir=-1; else {
   });
 })();
 </script>
-
-
 <script>
 (function(){
   function clamp(v, min, max){ v = +v; if (isNaN(v)) return 0; return Math.min(max, Math.max(min, v)); }
@@ -1371,8 +1131,6 @@ if (mode==="uponly") dir=1; else if (mode==="downonly") dir=-1; else {
   });
 })();
 </script>
-
-
 <script>
 (function(){
   try{
@@ -1387,8 +1145,6 @@ if (mode==="uponly") dir=1; else if (mode==="downonly") dir=-1; else {
   }catch(e){ /* do nothing */ }
 })();
 </script>
-
-
 <script>
 (function(){
   try{
@@ -1484,6 +1240,529 @@ if (mode==="uponly") dir=1; else if (mode==="downonly") dir=-1; else {
   }catch(_e){ /* swallow any unexpected errors to avoid blank screen */ }
 })();
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var ranges = document.querySelectorAll('input[type="range"]');
+  for(var i=0;i<ranges.length;i++){
+    if(!ranges[i].classList.contains('air-range')) ranges[i].classList.add('air-range');
+  }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var ids = ['biasSlider','volumeSlider','bias-range','volume-range'];
+  ids.forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && el.type==='range') el.classList.add('air-slider');
+  });
+  // Fallback: tag any visible ranges that aren't already tagged.
+  var ranges = document.querySelectorAll('input[type="range"]');
+  ranges.forEach(function(r){ if(!r.classList.contains('air-slider')) r.classList.add('air-slider'); });
+});
+</script>
+<script>
+(function(){
+  function clamp(v,min,max){ return Math.min(max, Math.max(min, v)); }
+  function asNum(x, d){ var v = parseFloat(x); return isFinite(v)?v:d; }
+  function toPct(val, min, max, step){
+    var pct = (val - min) / (max - min || 1);
+    return clamp(pct*100, 0, 100);
+  }
+  function fromClientX(x, rect, min, max, step){
+    var pct = clamp((x - rect.left) / (rect.width || 1), 0, 1);
+    var raw = min + pct*(max-min);
+    if(step>0){
+      var q = Math.round((raw - min)/step);
+      raw = min + q*step;
+    }
+    // snap to 1 decimal if step is .5 etc.
+    var dp = (step && step<1) ? 1 : 0;
+    return parseFloat(raw.toFixed(dp));
+  }
 
+  function enhanceSlider(input){
+    if(input.dataset.airEnhanced==='1') return;
+    input.dataset.airEnhanced = '1';
+    // Wrap
+    var wrap = document.createElement('div');
+    wrap.className = 'air-skin';
+    var track = document.createElement('div'); track.className = 'air-track';
+    var thumb = document.createElement('div'); thumb.className = 'air-thumb';
+    // Insert wrapper and move input inside
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(track);
+    wrap.appendChild(thumb);
+    input.classList.add('air-native');
+    wrap.appendChild(input);
+
+    function read(){
+      var min = asNum(input.min, 0);
+      var max = asNum(input.max, 100);
+      var step = asNum(input.step, 1);
+      var val = asNum(input.value, min);
+      return {min:min,max:max,step:step,val:val};
+    }
+    function render(){
+      var R = read();
+      wrap.classList.toggle('is-disabled', input.disabled);
+      var pct = toPct(R.val, R.min, R.max, R.step);
+      thumb.style.left = pct + '%';
+    }
+    function setVal(v, fire){
+      var R=read();
+      v = clamp(v, R.min, R.max);
+      if(R.step>0){ v = fromClientX((v-R.min)/(R.max-R.min||1), {left:0,width:1}, R.min, R.max, R.step); }
+      if(String(input.value) !== String(v)){
+        input.value = v;
+        if(fire){
+          var ev = new Event('input', {bubbles:true});
+          input.dispatchEvent(ev);
+        }
+      }
+      render();
+    }
+
+    // Pointer handling
+    var dragging=false;
+    function onDown(e){
+      if(input.disabled) return;
+      dragging=true; wrap.classList.add('is-focus');
+      var rect = wrap.getBoundingClientRect();
+      var R = read();
+      var v = fromClientX((e.clientX||e.touches?.[0]?.clientX||0), rect, R.min, R.max, R.step);
+      setVal(v, true);
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp, {once:true});
+      window.addEventListener('touchmove', onMove, {passive:false});
+      window.addEventListener('touchend', onUp, {once:true});
+      e.preventDefault();
+    }
+    function onMove(e){
+      if(!dragging) return;
+      var rect = wrap.getBoundingClientRect();
+      var R = read();
+      var clientX = e.clientX;
+      if(e.touches && e.touches[0]) clientX = e.touches[0].clientX;
+      var v = fromClientX(clientX, rect, R.min, R.max, R.step);
+      setVal(v, true);
+      e.preventDefault();
+    }
+    function onUp(e){
+      dragging=false; wrap.classList.remove('is-focus');
+      var ev = new Event('change',{bubbles:true}); input.dispatchEvent(ev);
+    }
+
+    wrap.addEventListener('pointerdown', onDown);
+    wrap.addEventListener('touchstart', onDown, {passive:false});
+
+    // Reflect external changes
+    input.addEventListener('input', render);
+    input.addEventListener('change', render);
+
+    // Initial
+    render();
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('input[type="range"]').forEach(enhanceSlider);
+    // Re-enhance if the app injects sliders later
+    const obs = new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        m.addedNodes && m.addedNodes.forEach(function(n){
+          if(n.nodeType===1){
+            if(n.matches && n.matches('input[type="range"]')) enhanceSlider(n);
+            n.querySelectorAll && n.querySelectorAll('input[type="range"]').forEach(enhanceSlider);
+          }
+        });
+      });
+    });
+    obs.observe(document.documentElement, {childList:true, subtree:true});
+  });
+})();
+</script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const setText = (id, s) => { const el=$(id); if(el) el.textContent = s; };
+  const clamp = (v,min,max)=>Math.min(max,Math.max(min,+v||0));
+  const stepSnap = () => ($('halfBeats') && $('halfBeats').checked) ? 0.5 : 1;
+  const snap = v => { const st=stepSnap(); return Math.round((+v||0)/st)*st; };
+  const fmt = v => { const st=stepSnap(); return snap(v).toFixed(st===0.5?1:0); };
+
+  function readRange(){
+    const minEl=$('minTempo'), maxEl=$('maxTempo'), startEl=$('startTempo');
+    let minT=clamp(minEl?.value||40,10,300);
+    let maxT=clamp(maxEl?.value||120,10,300);
+    if(minT>maxT){ maxT=minT; if(maxEl) maxEl.value=fmt(maxT); }
+    if(minEl) minEl.max=String(maxT);
+    if(maxEl) maxEl.min=String(minT);
+    if(startEl){
+      const st = snap(clamp(startEl.value,minT,maxT));
+      if(startEl.value!=String(st)) startEl.value = fmt(st);
+    }
+    return {minT,maxT,startT:+(startEl?.value||60)};
+  }
+
+  // Embedded base64 samples (distinct run vs count-in)
+  const RUN_B64 = "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";
+  const COUNTIN_B64 = "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";
+
+  // Audio
+  let audioCtx=null, masterGain=null, liveGain=null, runBuf=null, ciBuf=null;
+  let running=false, nextNoteTime=0, lookahead=0.008, scheduleAheadTime=0.15;
+  let tempo=60, subInBeat=0, beatIndex=0, phase='run', countInLeft=0;
+  let biasSign=1;
+
+  const pulse = (t)=>{
+    const dot = document.getElementById('pulseDot'); const show=document.getElementById('showPulse');
+    if(!dot || (show && !show.checked)) return;
+    const delay = Math.max(0, (t - audioCtx.currentTime)*1000);
+    setTimeout(()=>{ dot.classList.remove('__boom'); void dot.offsetWidth; dot.classList.add('__boom'); }, delay);
+  };
+
+  function semisToRate(semi){ return Math.pow(2,(semi||0)/12); }
+  function dbToLinear(db){ return Math.pow(10, db/20); }
+  function msToSamples(ms,sr){ return Math.max(0, Math.round((ms||0)*sr/1000)); }
+  function base64ToArrayBuffer(b64){
+    const clean=(b64||'').replace(/[^A-Za-z0-9+/=]/g,'');
+    const bin=atob(clean); const out=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i);
+    return out.buffer;
+  }
+  function decodeAudioDataCompat(ctx, ab){
+    return new Promise((resolve,reject)=>{
+      try{
+        const maybe = ctx.decodeAudioData(ab, b=>resolve(b), e=>reject(e));
+        if(maybe && typeof maybe.then==='function') maybe.then(resolve).catch(reject);
+      }catch(e){ reject(e); }
+    });
+  }
+  function autoTrim(ctx, buffer, thresholdDb, prePadMs, postPadMs){
+    const sr=buffer.sampleRate, ch=buffer.numberOfChannels, N=buffer.length;
+    const thr=dbToLinear(thresholdDb);
+    let start=0, end=N-1;
+    outerS: for(let i=0;i<N;i++){ for(let c=0;c<ch;c++){ if(Math.abs(buffer.getChannelData(c)[i])>=thr){ start=i; break outerS; } } }
+    outerE: for(let i=N-1;i>=0;i--){ for(let c=0;c<ch;c++){ if(Math.abs(buffer.getChannelData(c)[i])>=thr){ end=i; break outerE; } } }
+    start=Math.max(0, start - msToSamples(prePadMs,sr));
+    end=Math.min(N-1, end + msToSamples(postPadMs,sr));
+    const len=Math.max(1, end-start+1);
+    const out=ctx.createBuffer(ch, len, sr);
+    for(let c=0;c<ch;c++){ out.getChannelData(c).set(buffer.getChannelData(c).subarray(start,start+len)); }
+    return out;
+  }
+
+  const SETTINGS = {
+    run: { mode:'timbrevol', beatVol:1.00, subVol:0.72, accentSemi:5, subSemi:2, accentHpf:1880, subLpf:3400 },
+    ci:  { mode:'timbrevol', beatVol:1.00, subVol:0.67, accentSemi:6, subSemi:4, accentHpf:2150, subLpf:3000 }
+  };
+  
+  function updateLiveGainImmediate(){
+    if(!liveGain || !audioCtx) return;
+    const target = currentGainScalar();
+    try{ liveGain.gain.cancelScheduledValues(0); }catch(e){}
+    // Direct set so increases/decreases are instantaneous
+    liveGain.gain.value = target;
+  }
+
+
+  // --- Live volume rAF polling (immediate, event-agnostic) ---
+  let __lastVol = -1;
+  function __readVol(){ return currentGainScalar(); }
+  function __applyLiveVol(v){
+    if(!liveGain || !audioCtx) return;
+    try{ liveGain.gain.cancelScheduledValues(0); }catch(e){}
+    liveGain.gain.value = v;
+    try{ liveGain.gain.setValueAtTime(v, audioCtx.currentTime); }catch(e){}
+  }
+  function __volLoop(){
+    try{
+      const v = __readVol();
+      if(v !== __lastVol){
+        __lastVol = v;
+        __applyLiveVol(v);
+      }
+    }catch(e){}
+    requestAnimationFrame(__volLoop);
+  }
+
+function currentGainScalar(){
+    const v = +($('volume')?.value||60);
+    const allow = !!$('allowFullVolume')?.checked;
+    const base = Math.min(1, Math.max(0, v/100));
+    const boost = allow ? 1.6 : 1.0;
+    return Math.min(2.0, base*boost);
+  }
+  function makeChain(which, buffer, isAccent){
+    const cfg = SETTINGS[which];
+    const src = audioCtx.createBufferSource(); src.buffer = buffer;
+    const g = audioCtx.createGain();
+    let rate=1.0, tail=src;
+    if(cfg.mode==='timbrevol'){
+      rate = isAccent ? semisToRate(cfg.accentSemi) : semisToRate(-cfg.subSemi);
+      src.playbackRate.value = rate;
+      const filt = audioCtx.createBiquadFilter();
+      if(isAccent){ filt.type='highpass'; filt.frequency.value=cfg.accentHpf; }
+      else        { filt.type='lowpass';  filt.frequency.value=cfg.subLpf; }
+      tail.connect(filt); tail=filt;
+      g.gain.value = currentGainScalar() * (isAccent?cfg.beatVol:cfg.subVol);
+    }else{
+      g.gain.value = currentGainScalar();
+    }
+    tail.connect(g).connect(masterGain);
+    return {src, rate};
+  }
+  function scheduleRunClick(atTime, isAccent){
+    if(!runBuf) return;
+    const chain = makeChain('run', runBuf, isAccent);
+    chain.src.start(atTime);
+    pulse(atTime);
+  }
+  function scheduleCountInClick(atTime, isAccent){
+    if(!ciBuf) return;
+    const chain = makeChain('ci', ciBuf, isAccent);
+    chain.src.start(atTime);
+    pulse(atTime);
+  }
+
+  function scheduleAhead(){
+      const beatDur = 60/Math.max(tempo, 10);
+      scheduleAheadTime = Math.min(0.18, Math.max(0.06, 1.2*beatDur));
+    }
+
+  let tempoDisplayTimer=null;
+  function scheduleTempoDisplay(atTime, newTempo){
+    if(tempoDisplayTimer){ clearTimeout(tempoDisplayTimer); tempoDisplayTimer=null; }
+    const delay = Math.max(0, (atTime - audioCtx.currentTime)*1000);
+    tempoDisplayTimer = setTimeout(()=>{ setText('currentTempo', fmt(newTempo)); tempoDisplayTimer=null; }, delay);
+  }
+
+  function readSubdiv(){ return Math.max(1, parseInt(($('subdivision')?.value)||1,10)); }
+  function readBeatsPerTempo(){ return Math.max(1, parseInt(($('beatsPerTempo')?.value)||4,10)); }
+
+  function chooseNextTempo(curr){
+    const r = readRange();
+    const minC = Math.max(0, +($('minChange')?.value||1));
+    const maxC = Math.max(minC, +($('maxChange')?.value||5));
+    const mode = ($('mode')?.value)||'random';
+    const biasPct = Math.max(0, Math.min(100, +($('biasPct')?.value||0)));
+    let dir=0;
+    if(mode==='uponly') dir=1; else if(mode==='downonly') dir=-1;
+    else { const pUp = Math.max(0, Math.min(1, (biasPct*biasSign + 100)/200)); dir = (Math.random()<pUp)?1:-1; }
+    let target = curr + (minC + Math.random()*(maxC-minC))*dir;
+    if(target>r.maxT){ target = r.maxT - (target-r.maxT); }
+    if(target<r.minT){ target = r.minT + (r.minT-target); }
+    target = snap(target);
+    return Math.min(r.maxT, Math.max(r.minT, target));
+  }
+
+  function scheduler(){
+    if(!running) return;
+    const ct = audioCtx.currentTime;
+    scheduleAhead();
+    const subdiv = readSubdiv();
+    let unit = (60/tempo)/subdiv;
+    const bpt = readBeatsPerTempo();
+
+    while(nextNoteTime < ct + scheduleAheadTime){
+      if(phase==='run'){
+        const isAccent = (subInBeat===0);
+        scheduleRunClick(nextNoteTime, isAccent);
+        subInBeat++; nextNoteTime += unit;
+        if(subInBeat>=subdiv){
+          subInBeat=0;
+          beatIndex=(beatIndex+1)%bpt;
+          if(beatIndex===0){
+            if($('countIn') && $('countIn').checked){
+              phase='countin';
+              countInLeft = Math.max(1, parseInt(($('countInBeats')?.value)||4,10));
+            }else{
+              const nt = chooseNextTempo(tempo);
+              scheduleTempoDisplay(nextNoteTime, nt);
+              tempo = nt; unit = (60/tempo)/subdiv;
+            }
+          }
+        }
+      }else{
+        const withSubs = !!($('countInSubdivs') && $('countInSubdivs').checked);
+        const ciSubDiv = withSubs ? subdiv : 1;
+        const ciUnit = (60/tempo)/ciSubDiv;
+        const isAccentCI = (subInBeat===0);
+        scheduleCountInClick(nextNoteTime, isAccentCI);
+        subInBeat++; nextNoteTime += ciUnit;
+        if(subInBeat>=ciSubDiv){
+          subInBeat=0;
+          if(--countInLeft<=0){
+            const nt2 = chooseNextTempo(tempo);
+            scheduleTempoDisplay(nextNoteTime, nt2);
+            tempo=nt2; phase='run'; beatIndex=0;
+          }
+        }
+      }
+    }
+    setTimeout(scheduler, lookahead*1000);
+  }
+
+  async function ensureAudio(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
+      masterGain = audioCtx.createGain();
+      liveGain  = audioCtx.createGain();
+      masterGain.connect(liveGain).connect(audioCtx.destination);
+      liveGain.gain.value = 1.0;
+      try{ window._airAudioCtx = audioCtx; }catch(e){}
+    }
+    if(audioCtx.state==='suspended'){ try{ await audioCtx.resume(); }catch{} }
+    if(!runBuf){
+      const br = await decodeAudioDataCompat(audioCtx, base64ToArrayBuffer(RUN_B64));
+      runBuf = autoTrim(audioCtx, br, -40, 0.2, 0.4);
+    }
+    if(!ciBuf){
+      const bc = await decodeAudioDataCompat(audioCtx, base64ToArrayBuffer(COUNTIN_B64));
+      ciBuf = autoTrim(audioCtx, bc, -40, 0.2, 0.4);
+    }
+  }
+
+  async function start(){
+    if(running) return;
+    try{
+      await ensureAudio();
+      const r = readRange();
+      tempo = clamp(snap(($('startTempo')?.value)||r.startT), r.minT, r.maxT);
+      setText('currentTempo', fmt(tempo));
+      subInBeat=0; beatIndex=0; phase = ($('countIn') && $('countIn').checked) ? 'countin' : 'run';
+      countInLeft = Math.max(1, parseInt(($('countInBeats')?.value)||4,10));
+      nextNoteTime = audioCtx.currentTime + 0.05;
+      running = true;
+      if($('startStop')) $('startStop').textContent='Stop';
+      if($('status')) $('status').textContent='Running';
+      scheduler();
+    }catch(e){
+      if($('status')) $('status').textContent='Start error: '+e;
+    }
+  }
+  function stop(){
+    running=false;
+    if($('startStop')) $('startStop').textContent='Start';
+    if($('status')) $('status').textContent='';
+  }
+
+  // Re-bind the Start/Stop to ensure our single engine controls playback
+  window.addEventListener('DOMContentLoaded', ()=>{
+    // start live volume polling loop
+    __volLoop();
+    const volEl=$('volume'); const fullEl=$('allowFullVolume');
+    const isRunning = ()=>{ const st = $('status')?.textContent||''; return /running/i.test(st); };
+    function onVolChange(){ updateLiveGainImmediate(); }
+    if(volEl){ ['input','change'].forEach(ev=> volEl.addEventListener(ev, onVolChange)); }
+    if(fullEl){ ['input','change'].forEach(ev=> fullEl.addEventListener(ev, onVolChange)); }
+    // Initialize live gain on load
+    updateLiveGainImmediate();
+    // Live guard on range
+    ['minTempo','maxTempo','startTempo','halfBeats'].forEach(id=>{
+      const el=$(id); if(!el) return;
+      ['input','change','blur'].forEach(ev=> el.addEventListener(ev, readRange));
+    });
+    readRange();
+
+    const btn=$('startStop');
+    if(btn){
+      const clone=btn.cloneNode(true);
+      btn.parentNode.replaceChild(clone, btn);
+      clone.id='startStop';
+      clone.addEventListener('click', ()=> running?stop():start());
+    }
+    // Space toggles
+    window.addEventListener('keydown', e=>{ if(e.code==='Space'){ e.preventDefault(); running?stop():start(); }});
+
+    // Mobile/touch resume
+    window.addEventListener('touchstart', ()=>{ if(audioCtx && audioCtx.state==='suspended'){ audioCtx.resume(); } }, {passive:true});
+  });
+})();
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  let audioCtxRef=null; // reuse engine context if present
+  let previewOsc=null, previewGain=null, previewTimer=null;
+
+  function getAudioCtx(){
+    try{
+      // Try existing engine context (if exposed); else create a lightweight one
+      if(window._airAudioCtx) return window._airAudioCtx;
+    }catch(e){}
+    if(!audioCtxRef){
+      audioCtxRef = new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
+    }
+    return audioCtxRef;
+  }
+
+  function currVolumeScalar(){
+    const vol = +($('volume')?.value||60);
+    const allow = !!$('allowFullVolume')?.checked;
+    const base = Math.min(1, Math.max(0, vol/100));
+    const boost = allow ? 1.6 : 1.0;
+    return Math.min(2.0, base*boost);
+  }
+
+  function isRunning(){
+    // Look for a status text we set when engine runs, or presence of a scheduler flag if exposed
+    const st = $('status')?.textContent||'';
+    return /running/i.test(st);
+  }
+
+  function startPreview(){
+    const ctx = getAudioCtx();
+    if(!ctx) return;
+    if(ctx.state==='suspended'){ ctx.resume().catch(()=>{}); }
+    if(!previewGain){
+      previewGain = ctx.createGain();
+      previewGain.gain.value = 0;
+      previewGain.connect(ctx.destination);
+    }
+    if(!previewOsc){
+      previewOsc = ctx.createOscillator();
+      previewOsc.type = 'sine';
+      previewOsc.frequency.value = 880; // A5 small, unobtrusive
+      previewOsc.connect(previewGain);
+      try{ previewOsc.start(); }catch(e){ /* already started */ }
+    }
+    // bring up to current volume quickly
+    const v = currVolumeScalar();
+    const now = ctx.currentTime;
+    try{ previewGain.gain.cancelScheduledValues(now); }catch(e){}
+    previewGain.gain.setValueAtTime(previewGain.gain.value, now);
+    previewGain.gain.linearRampToValueAtTime(Math.min(0.4, v*0.3), now + 0.01);
+  }
+
+  function stopPreviewSoon(){
+    const ctx = getAudioCtx();
+    if(!ctx || !previewGain) return;
+    if(previewTimer) clearTimeout(previewTimer);
+    previewTimer = setTimeout(()=>{
+      const now = ctx.currentTime;
+      try{ previewGain.gain.cancelScheduledValues(now); }catch(e){}
+      previewGain.gain.linearRampToValueAtTime(0.0, now + 0.03);
+    }, 120); // fade out shortly after last movement
+  }
+
+  function onVolumeInput(){
+    // If running or preview disabled, do nothing (engine will pick up next tick)
+    if(isRunning() || !($('liveVolPreview') && $('liveVolPreview').checked)) return;
+    startPreview();
+    stopPreviewSoon();
+  }
+
+  window.addEventListener('DOMContentLoaded', function(){
+    const vol = $('volume');
+    if(vol){ ['input','change'].forEach(ev=> vol.addEventListener(ev, onVolumeInput)); }
+    // If engine exposes context, store for reuse
+    try{
+      if(window.AudioContext && !window._airAudioCtx){
+        // noop; engine likely creates its own on start
+      }
+    }catch(e){}
+  });
+})();
+</script>
 </body>
 </html>

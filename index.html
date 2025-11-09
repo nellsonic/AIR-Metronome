@@ -473,6 +473,43 @@ input#volume::-moz-range-thumb {
   box-shadow: none !important;
   cursor: pointer !important;
 }
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
+
+/* FIX41: inline '+' rendering, remove overlay */
+
+
+
+
+
+
+
+/* FIX42: Bias '+' overlay for positive numbers, aligned with minus sign */
+.bias-overlay-wrap {
+  position: relative;
+  display: inline-block;
+}
+.bias-overlay-wrap input[type="number"] {
+  padding-left: 20px !important;
+}
+.bias-overlay-plus {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--text-color, #fff);
+  opacity: 0.9;
+  font-weight: 500;
+  font-size: 1em;
+  font-family: inherit;
+  user-select: none;
+}
+.bias-overlay-wrap:not(.bias-positive) .bias-overlay-plus {
+  display: none;
+}
+
 </style>
 <style>
 
@@ -523,6 +560,9 @@ input#volume::-moz-range-thumb {
   cursor: pointer;
 }
 
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style>
 <style>
 
@@ -554,6 +594,9 @@ input#biasSlider::-moz-range-thumb{
   cursor:default;
 }
 
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style>
 <style>
 /*__air_pulse__*/ 
@@ -563,7 +606,10 @@ input#biasSlider::-moz-range-thumb{
   60%{transform:scale(2.0);opacity:1} 
   100%{transform:scale(2.8);opacity:0} 
 }
-#__pulse_wrap__ #pulseDot.__boom{animation:__air_boom 280ms ease-out 1;}
+#__pulse_wrap__ #pulseDot.__boom{animation:__air_boom 280ms ease-out 1; opacity:1;}
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style><style>
 /* === A.I.R. unified slider skin (non-destructive) === */
 input[type="range"]{
@@ -660,6 +706,9 @@ input[type="range"]:disabled::-moz-range-track{
 .compact-range input[type="range"]::-moz-range-thumb{
   width: 14px; height: 14px;
 }
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style><style>
 /* === A.I.R. Slider Clean Skin (uniform look, minimal overrides) === */
 :root{
@@ -708,6 +757,9 @@ input[type="range"].air-slider:focus{outline:none}
 .compact-range input[type="range"].air-slider{height:22px}
 .compact-range input[type="range"].air-slider::-webkit-slider-thumb{width:14px;height:14px;margin-top:-4px}
 .compact-range input[type="range"].air-slider::-moz-range-thumb{width:14px;height:14px}
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style><style>
 /* === A.I.R. Custom Slider (pixel-consistent across browsers) === */
 .air-skin{position:relative; display:block; width:100%; height:28px; touch-action:none; user-select:none}
@@ -724,6 +776,9 @@ input[type="range"].air-slider:focus{outline:none}
 .air-skin input[type=range].air-native{
   position:absolute; inset:0; width:100%; height:100%; opacity:0; pointer-events:none;
 }
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style><style>
 /* Keep custom sliders full-row and above any rules beneath */
 .air-skin{ display:block; width:100%; position:relative; z-index:2; margin:14px 0; }
@@ -734,6 +789,9 @@ hr{ margin-top:26px !important; margin-bottom:26px !important; }
 /* If any hr sits immediately above/below a slider, push it further */
 hr + .air-skin{ margin-top:10px; }
 .air-skin + hr{ margin-top:20px; }
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style><style>
 /* Ensure native range is fully invisible—no background, no shadow, no outline */
 .air-skin input[type=range].air-native{
@@ -752,6 +810,9 @@ hr + .air-skin{ margin-top:10px; }
 /* Some frameworks wrap ranges with a pill background using ::before/::after—neutralize if present */
 .air-skin::before,
 .air-skin::after{ content:none !important; }
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style><style>
 /* === A.I.R. tight, responsive sliders ===
    Goal: clearly shorter than other controls, looks good on any screen.
@@ -776,19 +837,31 @@ hr + .air-skin{ margin-top: 12px; }
   .air-skin .air-track{ height:5px; }
   .air-skin .air-thumb{ width:14px; height:14px; }
 }
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style><style>
 #muteSubsDetails summary::-webkit-details-marker{display:none;}
 #muteSubsDetails[open] > #muteSubsPanel{display:block;}
 #muteSubsDetails{position:relative;z-index:100000;}
 #muteSubsWrap .btn-like:hover{background:#1b2336;}
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style><style>
 /* Ensure the mute menu opens above sliders and is always clickable */
 #muteSubsDetails { position: relative; z-index: 100000; }
 #muteSubsDetails > summary { position: relative; z-index: 100001; pointer-events: auto; }
 #muteSubsPanel { position: absolute; right: 0; z-index: 100002; }
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style><style>
 #muteSubsBoxes label{display:inline-flex;align-items:center;gap:6px;padding:2px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03)}
 #muteSubsBoxes input[type="checkbox"]{transform:scale(1.0);}
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style><style>
 #muteSubsPanel label,
 #muteSubsPanel,
@@ -799,6 +872,9 @@ hr + .air-skin{ margin-top: 12px; }
 #muteSubsPanel input[type="checkbox"] {
   accent-color: #94a3b8; /* matches subdued slider thumb color */
 }
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style><style>
 #muteSubsPanel label[for="muteSubsApplyToCI"],
 #muteSubsPanel label:has(#muteSubsApplyToCI) {
@@ -807,9 +883,35 @@ hr + .air-skin{ margin-top: 12px; }
   line-height: 1.4;
   color: #cbd5e1 !important;
 }
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style><style>
-#biasValueRow label{ color:#cbd5e1; font-size:0.9rem; }
 #biasValueRow input[type="number"]{ width:64px; }
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
+</style><style>
+#muteSubsPanel label,
+#muteSubsPanel,
+#muteSubsPanel span,
+#muteSubsPanel button {
+  color: #cbd5e1 !important;
+}
+#muteSubsPanel input[type="checkbox"] {
+  accent-color: #94a3b8;
+}
+/* If the 'Apply muting to count-in' label exists, size it to match the Subdivisions line */
+#muteSubsPanel label[for="muteSubsApplyToCI"],
+#muteSubsPanel label:has(#muteSubsApplyToCI) {
+  font-size: 0.875rem !important;
+  font-weight: normal !important;
+  line-height: 1.4;
+  color: #cbd5e1 !important;
+}
+
+/* bias-disabled-style */
+.bias-disabled{opacity:0.5}
 </style></head>
 <body>
 <h1>Automatic Incremental &amp; Randomizing (A.I.R.) Metronome</h1>
@@ -859,7 +961,7 @@ hr + .air-skin{ margin-top: 12px; }
 <option value="5">5's</option>
 <option value="6">6's</option>
 <option value="7">7's</option>
-</select><span id="muteSubsWrap" style="display:inline-block;margin-left:10px;vertical-align:middle;"><details id="muteSubsDetails" style="display:inline-block;position:relative;"><summary class="btn-like" style="cursor:pointer;list-style:none;padding:4px 8px;border:1px solid #303643;border-radius:6px;font-size:0.9em;background:#0f172a;color:#c7d2fe;">Mute subdivisions ▾</summary><div id="muteSubsPanel" style="position:absolute;right:0;margin-top:6px;z-index:100001;background:#0f172a;color:#c7d2fe;border:1px solid #1f2937;border-radius:8px;padding:10px 12px;min-width:180px;box-shadow:0 6px 20px rgba(0,0,0,.35);display:none;"><label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;user-select:none;"><input id="muteSubsApplyToCI" type="checkbox"/> Apply muting to count-in</label><div id="muteSubsTitle"></div><div id="muteSubsBoxes" style="display:flex; flex-wrap:nowrap; align-items:center; gap:10px; white-space:nowrap; overflow-x:auto; padding:4px 2px;"></div><div style="opacity:.75;font-size:.85em;margin-top:8px;">Uncheck sub-notes to silence them.</div><button id="muteSubsResetBtn" style="margin-top:10px;padding:4px 8px;border:1px solid #303643;border-radius:6px;background:#0f172a;color:#c7d2fe;cursor:pointer;">Reset muting</button></div></details></span>
+</select><span id="muteSubsWrap" style="display:inline-block;margin-left:10px;vertical-align:middle;"><details id="muteSubsDetails" style="display:inline-block;position:relative;"><summary class="btn-like" style="cursor:pointer;list-style:none;padding:4px 8px;border:1px solid #303643;border-radius:6px;font-size:0.9em;background:#0f172a;color:#c7d2fe;">Mute subdivisions ▾</summary><div id="muteSubsPanel" style="position:absolute;right:0;margin-top:6px;z-index:100001;background:#0f172a;color:#c7d2fe;border:1px solid #1f2937;border-radius:8px;padding:10px 12px;min-width:180px;box-shadow:0 6px 20px rgba(0,0,0,.35);display:none;"><label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;user-select:none;"><input id="muteSubsApplyToCI" type="checkbox"/> Apply muting to count-in</label><div id="muteSubsTitle"></div><div id="muteSubsBoxes" style="display:flex;flex-wrap:nowrap;align-items:center;gap:10px;white-space:nowrap;overflow-x:auto;padding:4px 2px;"></div><div style="opacity:.75;font-size:.85em;margin-top:8px;">Uncheck sub-notes to silence them.</div><button id="muteSubsResetBtn" style="margin-top:10px;padding:4px 8px;border:1px solid #303643;border-radius:6px;background:#0f172a;color:#c7d2fe;cursor:pointer;">Reset muting</button></div></details></span>
 </div>
 <div class="section">
 <label for="mode">Mode:</label>
@@ -868,10 +970,10 @@ hr + .air-skin{ margin-top: 12px; }
 <option value="uponly">Up only</option>
 <option value="downonly">Down only</option>
 </select>
-<button class="inline" id="biasDirBtn" type="button">Bias: Up</button>
-<input disabled="" id="biasSlider" max="100" min="-100" step="1" style="vertical-align:middle; width:240px;" type="range"/> <div id="biasValueRow" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;"><label>Bias:</label><input id="biasNum" max="100" min="-100" step="1" style="width:64px; margin-left:.5rem;" type="number"/></div>
-<div class="biasNote" style="display:block;text-align:center;font-size:0.9em;color:var(--text-muted,#aaa);margin-top:0.5rem;line-height:1.3;">negative = more likely to go down, positive = more likely to go up</div>
-
+<!-- removed Bias Up button -->
+<input disabled="" id="biasSlider" max="100" min="-100" step="1" style="vertical-align:middle; width:240px;" type="range"/> <div id="biasValueRow" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;"><label for="biasNum" class="inline" style="margin-right:6px;font-size:1em;font-weight:500;vertical-align:middle;">Bias %:</label><input id="biasNum" max="100" min="-100" step="1" style="width:64px; margin-left:.5rem;" type="number"/></div>
+<div class="biasNote" style="display:block;text-align:center;font-size:0.9em;color:var(--text-muted,#aaa);margin-top:0.5rem;line-height:1.3;">Negative = more likely to go down. Positive = more likely to go up.</div>
+<label for="biasPct"></label>
 </div>
 <div class="section">
 <input id="countIn" type="checkbox"/>
@@ -2050,6 +2152,187 @@ function currentGainScalar(){
     document.addEventListener('DOMContentLoaded', bindMuteReset);
   }else{
     bindMuteReset();
+  }
+})();
+</script>
+<script>
+(function(){
+  var sl = document.getElementById('biasSlider');
+  if(!sl) return;
+
+  // Ensure slider is a working range control
+  try { sl.type = 'range'; } catch(_) {}
+  sl.min = (sl.min !== undefined && sl.min !== '') ? sl.min : '-100';
+  sl.max = (sl.max !== undefined && sl.max !== '') ? sl.max : '100';
+  sl.step = (sl.step !== undefined && sl.step !== '') ? sl.step : '1';
+  sl.disabled = false;
+
+  // Locate numeric input shown below the slider
+  function findNumeric(){
+    var n = sl;
+    for (var i=0; i<50 && n; i++){
+      n = n.nextElementSibling || (n.parentElement && n.parentElement.nextElementSibling);
+      if(!n) break;
+      if (n.tagName === 'INPUT' && n.type === 'number') return n;
+      if (n.querySelector){
+        var q = n.querySelector('input[type="number"]');
+        if(q) return q;
+      }
+    }
+    return null;
+  }
+  var num = findNumeric();
+  if(!num){
+    // Fallback: create one if missing
+    num = document.createElement('input');
+    num.type = 'number';
+    num.style.cssText = 'width:64px;margin-left:.5rem;';
+    sl.parentElement.appendChild(num);
+  }
+
+  // Two-way binding & clamping
+  function clamp(v){ v = +v||0; if(v>100) v=100; if(v<-100) v=-100; return v; }
+  function setBoth(v){
+    v = clamp(v);
+    sl.value = String(v);
+    num.value = String(v);
+    // If engine reads from some global or hidden input, set that too
+    try { var fake = document.getElementById('biasPct'); if(fake) fake.value = String(v); } catch(e){}
+  }
+
+  // Initialize from whichever already has a value
+  setBoth(sl.value || num.value || 0);
+
+  sl.addEventListener('input',  function(){ setBoth(sl.value);  });
+  sl.addEventListener('change', function(){ setBoth(sl.value);  });
+  num.addEventListener('input', function(){ setBoth(num.value); });
+  num.addEventListener('change',function(){ setBoth(num.value); });
+
+  // Provide compatibility alias if old code expects window.biasPct.value
+  if (!document.getElementById('biasPct')) {
+    try {
+      Object.defineProperty(window, 'biasPct', { get: function(){ return { value: sl.value }; }});
+    } catch(e){ /* ignore */ }
+  }
+})();
+</script>
+
+<!-- FIX39: Disable bias controls unless Mode=Random -->
+<script>
+(function(){
+  function findModeSelect(){
+    const selects = Array.from(document.querySelectorAll('select'));
+    for(const sel of selects){
+      const hasRandom = Array.from(sel.options).some(o => /random/i.test(o.text) || /random/i.test(o.value));
+      const hasUpOnly = Array.from(sel.options).some(o => /(up\s*only|up-only)/i.test(o.text) || /(up\s*only|up-only)/i.test(o.value));
+      const hasDownOnly = Array.from(sel.options).some(o => /(down\s*only|down-only)/i.test(o.text) || /(down\s*only|down-only)/i.test(o.value));
+      if(hasRandom && (hasUpOnly || hasDownOnly)) return sel;
+    }
+    // fallback: first select with label 'Mode'
+    const labels = Array.from(document.querySelectorAll('label'));
+    for(const lab of labels){
+      if(/\bmode\b/i.test(lab.textContent)){
+        const forId = lab.getAttribute('for');
+        if(forId){
+          const el = document.getElementById(forId);
+          if(el && el.tagName === 'SELECT') return el;
+        }
+      }
+    }
+    return null;
+  }
+  function findBiasControls(){
+    const biasNumber = document.querySelector('input[type="number"][id*="bias" i], input[type="number"][name*="bias" i]');
+    const biasSlider = document.querySelector('input[type="range"][id*="bias" i], input[type="range"][name*="bias" i]');
+    return {biasNumber, biasSlider};
+  }
+  function setDisabled(el, disabled){
+    if(!el) return;
+    el.disabled = disabled;
+    const wrap = el.closest('div') || el.parentElement;
+    if(wrap){
+      if(disabled){ wrap.classList.add('bias-disabled'); }
+      else{ wrap.classList.remove('bias-disabled'); }
+    }
+    el.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+  }
+  function updateBiasControls(){
+    const modeSel = findModeSelect();
+    const {biasNumber, biasSlider} = findBiasControls();
+    if(!modeSel) return;
+    const isRandom = /random/i.test(modeSel.value || '');
+    setDisabled(biasNumber, !isRandom);
+    setDisabled(biasSlider, !isRandom);
+  }
+  function init(){
+    const modeSel = findModeSelect();
+    if(!modeSel) return;
+    modeSel.addEventListener('change', updateBiasControls);
+    updateBiasControls();
+    setTimeout(updateBiasControls, 100);
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
+  }
+})();
+</script>
+
+
+
+<!-- FIX42: Bias '+' overlay that aligns perfectly and preserves number input behavior -->
+<script>
+(function(){
+  function findBiasNumber(){
+    const inputs = Array.from(document.querySelectorAll('input[type="number"]'));
+    return inputs.find(el => /bias/i.test(el.id) || /bias/i.test(el.name));
+  }
+  function ensureOverlay(input){
+    if(!input) return null;
+    if(input.closest('.bias-overlay-wrap')) return input.closest('.bias-overlay-wrap');
+    const wrap = document.createElement('span');
+    wrap.className = 'bias-overlay-wrap';
+    const plus = document.createElement('span');
+    plus.className = 'bias-overlay-plus';
+    plus.textContent = '+';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(plus);
+    wrap.appendChild(input);
+    return wrap;
+  }
+  function updatePlus(input){
+    const wrap = input.closest('.bias-overlay-wrap');
+    if(!wrap) return;
+    const val = parseFloat(input.value);
+    if(Number.isFinite(val) && val > 0){
+      wrap.classList.add('bias-positive');
+    }else{
+      wrap.classList.remove('bias-positive');
+    }
+  }
+  function init(){
+    const input = findBiasNumber();
+    if(!input) return;
+    const wrap = ensureOverlay(input);
+    updatePlus(input);
+    // Update on input/change
+    input.addEventListener('input', () => updatePlus(input));
+    input.addEventListener('change', () => updatePlus(input));
+    // Observe value attribute changes from slider sync
+    const observer = new MutationObserver(() => updatePlus(input));
+    observer.observe(input, { attributes: true, attributeFilter: ['value'] });
+    // Also hook the slider if present
+    const slider = document.querySelector('input[type="range"][id*="bias" i], input[type="range"][name*="bias" i]');
+    if(slider){
+      slider.addEventListener('input', () => updatePlus(input));
+      slider.addEventListener('change', () => updatePlus(input));
+    }
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 })();
 </script>

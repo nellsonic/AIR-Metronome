@@ -776,6 +776,40 @@ hr + .air-skin{ margin-top: 12px; }
   .air-skin .air-track{ height:5px; }
   .air-skin .air-thumb{ width:14px; height:14px; }
 }
+</style><style>
+#muteSubsDetails summary::-webkit-details-marker{display:none;}
+#muteSubsDetails[open] > #muteSubsPanel{display:block;}
+#muteSubsDetails{position:relative;z-index:100000;}
+#muteSubsWrap .btn-like:hover{background:#1b2336;}
+</style><style>
+/* Ensure the mute menu opens above sliders and is always clickable */
+#muteSubsDetails { position: relative; z-index: 100000; }
+#muteSubsDetails > summary { position: relative; z-index: 100001; pointer-events: auto; }
+#muteSubsPanel { position: absolute; right: 0; z-index: 100002; }
+</style><style>
+#muteSubsBoxes label{display:inline-flex;align-items:center;gap:6px;padding:2px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03)}
+#muteSubsBoxes input[type="checkbox"]{transform:scale(1.0);}
+</style><style>
+#muteSubsPanel label,
+#muteSubsPanel,
+#muteSubsPanel span,
+#muteSubsPanel button {
+  color: #cbd5e1 !important; /* soft gray-blue matching existing text */
+}
+#muteSubsPanel input[type="checkbox"] {
+  accent-color: #94a3b8; /* matches subdued slider thumb color */
+}
+</style><style>
+#muteSubsPanel label[for="muteSubsApplyToCI"],
+#muteSubsPanel label:has(#muteSubsApplyToCI) {
+  font-size: 0.875rem !important; /* matches "Subdivisions" size */
+  font-weight: normal !important;
+  line-height: 1.4;
+  color: #cbd5e1 !important;
+}
+</style><style>
+#biasValueRow label{ color:#cbd5e1; font-size:0.9rem; }
+#biasValueRow input[type="number"]{ width:64px; }
 </style></head>
 <body>
 <h1>Automatic Incremental &amp; Randomizing (A.I.R.) Metronome</h1>
@@ -825,7 +859,7 @@ hr + .air-skin{ margin-top: 12px; }
 <option value="5">5's</option>
 <option value="6">6's</option>
 <option value="7">7's</option>
-</select>
+</select><span id="muteSubsWrap" style="display:inline-block;margin-left:10px;vertical-align:middle;"><details id="muteSubsDetails" style="display:inline-block;position:relative;"><summary class="btn-like" style="cursor:pointer;list-style:none;padding:4px 8px;border:1px solid #303643;border-radius:6px;font-size:0.9em;background:#0f172a;color:#c7d2fe;">Mute subdivisions ▾</summary><div id="muteSubsPanel" style="position:absolute;right:0;margin-top:6px;z-index:100001;background:#0f172a;color:#c7d2fe;border:1px solid #1f2937;border-radius:8px;padding:10px 12px;min-width:180px;box-shadow:0 6px 20px rgba(0,0,0,.35);display:none;"><label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;user-select:none;"><input id="muteSubsApplyToCI" type="checkbox"/> Apply muting to count-in</label><div id="muteSubsTitle"></div><div id="muteSubsBoxes" style="display:flex; flex-wrap:nowrap; align-items:center; gap:10px; white-space:nowrap; overflow-x:auto; padding:4px 2px;"></div><div style="opacity:.75;font-size:.85em;margin-top:8px;">Uncheck sub-notes to silence them.</div><button id="muteSubsResetBtn" style="margin-top:10px;padding:4px 8px;border:1px solid #303643;border-radius:6px;background:#0f172a;color:#c7d2fe;cursor:pointer;">Reset muting</button></div></details></span>
 </div>
 <div class="section">
 <label for="mode">Mode:</label>
@@ -835,9 +869,9 @@ hr + .air-skin{ margin-top: 12px; }
 <option value="downonly">Down only</option>
 </select>
 <button class="inline" id="biasDirBtn" type="button">Bias: Up</button>
-<input class="n4" id="biasPct" max="100" min="0" step="1" type="number" value="0"/> <input disabled="" id="biasSlider" max="100" min="-100" step="1" style="vertical-align:middle; width:240px;" type="range"/> <input id="biasNum" max="100" min="-100" step="1" style="width:64px; margin-left:.5rem;" type="number"/>
+<input disabled="" id="biasSlider" max="100" min="-100" step="1" style="vertical-align:middle; width:240px;" type="range"/> <div id="biasValueRow" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;"><label>Bias:</label><input id="biasNum" max="100" min="-100" step="1" style="width:64px; margin-left:.5rem;" type="number"/></div>
 <div class="biasNote" style="display:block;text-align:center;font-size:0.9em;color:var(--text-muted,#aaa);margin-top:0.5rem;line-height:1.3;">negative = more likely to go down, positive = more likely to go up</div>
-<label for="biasPct">Bias %</label>
+
 </div>
 <div class="section">
 <input id="countIn" type="checkbox"/>
@@ -1566,7 +1600,9 @@ function currentGainScalar(){
     while(nextNoteTime < ct + scheduleAheadTime){
       if(phase==='run'){
         const isAccent = (subInBeat===0);
-        scheduleRunClick(nextNoteTime, isAccent);
+        const __ms = (window.__mutedSubs && window.__mutedSubs.has) ? window.__mutedSubs : null;
+        const __muted = __ms ? __ms.has(subInBeat) : false;
+        if(!__muted) scheduleRunClick(nextNoteTime, isAccent);
         subInBeat++; nextNoteTime += unit;
         if(subInBeat>=subdiv){
           subInBeat=0;
@@ -1587,7 +1623,9 @@ function currentGainScalar(){
         const ciSubDiv = withSubs ? subdiv : 1;
         const ciUnit = (60/tempo)/ciSubDiv;
         const isAccentCI = (subInBeat===0);
-        scheduleCountInClick(nextNoteTime, isAccentCI);
+        const __msCI = (window.__mutedSubs && window.__mutedSubs.has) ? window.__mutedSubs : null;
+        const __mutedCI = withSubs && (typeof window.__muteCIEnabled==='function' && window.__muteCIEnabled()) && __msCI ? __msCI.has(subInBeat) : false;
+        if(!__mutedCI) scheduleCountInClick(nextNoteTime, isAccentCI);
         subInBeat++; nextNoteTime += ciUnit;
         if(subInBeat>=ciSubDiv){
           subInBeat=0;
@@ -1762,6 +1800,257 @@ function currentGainScalar(){
       }
     }catch(e){}
   });
+})();
+</script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const mutedSubs = new Set(); // 0-based
+
+  function subdivisionCount(){
+    const sel = $('subdivision'); if(!sel) return 1;
+    // Try numeric value
+    let n = Number(sel.value);
+    if(Number.isFinite(n) && n>=1) return n;
+    // Try data-n on selected option
+    const opt = sel.options && sel.options[sel.selectedIndex];
+    const dataN = opt?.dataset?.n || opt?.getAttribute('data-n') || opt?.getAttribute('data-count');
+    n = Number(dataN);
+    if(Number.isFinite(n) && n>=1) return n;
+    // Map common labels
+    const label = (opt?.textContent || '').toLowerCase();
+    if(/quarter/.test(label)) return 1;
+    if(/eighth/.test(label)) return 2;
+    if(/triplet/.test(label)) return 3;
+    if(/sixteenth/.test(label)) return 4;
+    if(/quintuplet/.test(label)) return 5;
+    if(/sextuplet/.test(label)) return 6;
+    return 1;
+  }
+
+  function buildMuteUI(){
+    const boxes = $('muteSubsBoxes'), title = $('muteSubsTitle');
+    if(!boxes || !title) return;
+    boxes.innerHTML='';
+    const N = subdivisionCount();
+    title.textContent = 'Subdivisions: ' + N;
+    [...mutedSubs].forEach(i=>{ if(i>=N) mutedSubs.delete(i); });
+    for(let i=0;i<N;i++){
+      const lab = document.createElement('label');
+      lab.style.cssText='display:flex;align-items:center;gap:6px;user-select:none;';
+      const cb = document.createElement('input');
+      cb.type='checkbox'; cb.checked = !mutedSubs.has(i);
+      cb.addEventListener('change', ()=>{ if(cb.checked) mutedSubs.delete(i); else mutedSubs.add(i); });
+      const txt = document.createElement('span'); txt.textContent = String(i+1);
+      lab.append(cb, txt);
+      boxes.appendChild(lab);
+    }
+  }
+
+  function closeOnOutside(){
+    const det = $('muteSubsDetails');
+    if(!det) return;
+    document.addEventListener('click', (e)=>{
+      if(det.open && !det.contains(e.target)) det.open = false;
+    });
+  }
+
+  // Patch schedule functions when available; retry until present
+  function patchOnce(){
+    const g = window;
+    if(g.__mutePatched) return true;
+    const have = (typeof g.scheduleRunClick === 'function') && (typeof g.scheduleCountInClick === 'function');
+    if(!have) return false;
+    const origRun = g.scheduleRunClick;
+    const origCI  = g.scheduleCountInClick;
+    g.scheduleRunClick = function(time, isAccent, subIndex){
+      let idx = (typeof subIndex === 'number') ? subIndex : (isAccent ? 0 : 1);
+      if(mutedSubs.has(idx)) return;
+      return origRun.apply(this, arguments);
+    };
+    g.scheduleCountInClick = function(time, isAccent, subIndex){
+      let idx = (typeof subIndex === 'number') ? subIndex : (isAccent ? 0 : 1);
+      const withSubs = !!document.querySelector('#countInWithSubs:checked');
+      if(withSubs && mutedSubs.has(idx)) return;
+      return origCI.apply(this, arguments);
+    };
+    g.__mutePatched = true;
+    return true;
+  }
+
+  function ensurePatched(){
+    if(patchOnce()) return;
+    let tries = 0;
+    const id = setInterval(()=>{
+      tries++;
+      if(patchOnce() || tries>60){ clearInterval(id); }
+    }, 250);
+  }
+
+  function init(){
+    buildMuteUI();
+    const sub = $('subdivision');
+    if(sub){ ['change','input'].forEach(ev=> sub.addEventListener(ev, buildMuteUI)); }
+    closeOnOutside();
+    ensurePatched();
+  }
+  window.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+<script>
+(function(){
+  function ensureMuteOpenWorks(){
+    var det = document.getElementById('muteSubsDetails');
+    if(!det) return;
+    var sum = det.querySelector('summary');
+    if(!sum) return;
+    if(sum.__muteBound) return;
+    sum.__muteBound = true;
+    sum.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      det.open = !det.open;
+      // trigger layout update for some browsers
+      var p = document.getElementById('muteSubsPanel'); if(p){ p.style.display = det.open ? 'block' : 'none'; }
+    });
+    // close on outside click
+    document.addEventListener('click', function(ev){
+      if(det.open && !det.contains(ev.target)){
+        det.open = false;
+        var p = document.getElementById('muteSubsPanel'); if(p){ p.style.display = 'none'; }
+      }
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', ensureMuteOpenWorks);
+  }else{
+    ensureMuteOpenWorks();
+  }
+})();
+</script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  // Global muted set consulted by scheduler
+  if(!window.__mutedSubs) window.__mutedSubs = new Set();
+
+  function subdivisionCount(){
+    const sel = $('subdivision'); if(!sel) return 1;
+    let n = Number(sel.value);
+    if(Number.isFinite(n) && n>=1) return n;
+    const opt = sel.options && sel.options[sel.selectedIndex];
+    const d = opt?.dataset?.n || opt?.getAttribute('data-n') || opt?.getAttribute('data-count');
+    n = Number(d);
+    if(Number.isFinite(n) && n>=1) return n;
+    const label = (opt?.textContent||'').toLowerCase();
+    if(/quarter/.test(label)) return 1;
+    if(/eighth/.test(label)) return 2;
+    if(/triplet/.test(label)) return 3;
+    if(/sixteenth/.test(label)) return 4;
+    if(/quintuplet/.test(label)) return 5;
+    if(/sextuplet/.test(label)) return 6;
+    return 1;
+  }
+
+  function syncFromUI(){
+    const boxes = document.querySelectorAll('#muteSubsBoxes input[type="checkbox"]');
+    if(!boxes.length){ return; }
+    const N = subdivisionCount();
+    // Build muted set from unchecked boxes
+    const muted = new Set();
+    boxes.forEach((cb, idx)=>{ if(idx < N && !cb.checked) muted.add(idx); });
+    // replace contents atomically
+    window.__mutedSubs.clear();
+    muted.forEach(i=> window.__mutedSubs.add(i));
+  }
+
+  function bindBoxEvents(){
+    const boxes = document.querySelectorAll('#muteSubsBoxes input[type="checkbox"]');
+    boxes.forEach(cb => {
+      if(cb.__muteBound) return;
+      cb.__muteBound = true;
+      cb.addEventListener('change', syncFromUI);
+    });
+  }
+
+  function watchUI(){
+    // Observe changes under the panel so when the UI rebuilds, we re-bind
+    const panel = document.getElementById('muteSubsDetails') || document.body;
+    const mo = new MutationObserver(()=>{ bindBoxEvents(); syncFromUI(); });
+    mo.observe(panel, { childList:true, subtree:true });
+  }
+
+  function init(){
+    bindBoxEvents();
+    syncFromUI();
+    watchUI();
+    // Also resync periodically as a fallback
+    setInterval(syncFromUI, 500);
+    const sub = $('subdivision');
+    if(sub){ ['change','input'].forEach(ev=> sub.addEventListener(ev, ()=>{ setTimeout(syncFromUI, 0); })); }
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
+  }
+})();
+</script>
+<script>
+(function(){
+  function resetMuteOnSubdivisionChange(){
+    var sub = document.getElementById('subdivision');
+    if(!sub) return;
+    function resetAll(){
+      var boxes = document.querySelectorAll('#muteSubsBoxes input[type="checkbox"]');
+      boxes.forEach(function(cb){ cb.checked = true; });
+      if(window.__mutedSubs){ window.__mutedSubs.clear(); }
+      // Trigger any sync function from previous patch if present
+      if(typeof window.dispatchEvent === 'function'){
+        try{ window.dispatchEvent(new Event('air-mute-sync')); }catch(e){}
+      }
+    }
+    ['change','input'].forEach(function(ev){
+      sub.addEventListener(ev, function(){ setTimeout(resetAll, 0); });
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', resetMuteOnSubdivisionChange);
+  }else{
+    resetMuteOnSubdivisionChange();
+  }
+})();
+</script>
+<script>
+(function(){
+  function __muteCIEnabled(){
+    var el = document.getElementById('muteSubsApplyToCI');
+    return !!(el && el.checked);
+  }
+  try{ window.__muteCIEnabled = __muteCIEnabled; }catch(e){}
+})();
+</script>
+<script>
+(function(){
+  function bindMuteReset(){
+    var btn = document.getElementById('muteSubsResetBtn');
+    if(!btn || btn.__bound) return;
+    btn.__bound = true;
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      var boxes = document.querySelectorAll('#muteSubsBoxes input[type="checkbox"]');
+      boxes.forEach(function(cb){ cb.checked = true; });
+      if(window.__mutedSubs && window.__mutedSubs.clear) window.__mutedSubs.clear();
+      // if any sync function is present from earlier patches, trigger it
+      try { window.dispatchEvent(new Event('air-mute-sync')); } catch(e){}
+    });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bindMuteReset);
+  }else{
+    bindMuteReset();
+  }
 })();
 </script>
 </body>

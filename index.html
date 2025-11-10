@@ -3,43 +3,72 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>A.I.R. Metronome — FIX19 + Deterministic Repeats Engine</title>
+<title>A.I.R. Metronome — FIX19 + Deterministic Repeats Engine (UI Step 1j Unified Commit Everywhere)</title>
 <style>
   :root{
+    /* Theme tokens */
     --bg:#0d1117; --fg:#e6edf3; --muted:#9fb0c3; --line:#2b3444; --panel:#0f1623;
     --accent:#4fb3ff; --ok:#49d39e; --gold:#ffcc3d; --danger:#ff6b6b;
     --input:#111a2b; --chip:#172235;
+
+    /* UI scale tokens */
+    --radii:12px;
+    --radii-lg:16px;
+    --gap-s:6px;
+    --gap-m:12px;
+    --gap-l:20px;
+
+    --focus: 0 0 0 2px rgba(79,179,255,.4);
   }
   [data-theme="light"]{ --bg:#f4efe7; --fg:#1d2430; --muted:#5a606b; --line:#d9cfbf; --panel:#f5f1ea; --input:#ffffff; --chip:#fff9ef; --accent:#1a66ff; --ok:#0f8e64; --gold:#b07d00; }
   [data-theme="yellow"]{ --bg:#e1b507; --fg:#17130a; --muted:#3a301a; --line:#d0a908; --panel:#f0c427; --input:#fff4b4; --chip:#ffe780; --accent:#0f3b9e; --ok:#0f6c4a; --gold:#7a5600; }
   [data-theme="red"]{ --bg:#25080b; --fg:#ffecec; --muted:#ffb3b3; --line:#62222a; --panel:#2e0e13; --input:#3a141a; --chip:#47171d; --accent:#ff8aa0; --ok:#62e0b9; --gold:#ffd56b; }
   [data-theme="green"]{ --bg:#0b1c18; --fg:#e6fff7; --muted:#9ad5c3; --line:#1d3a33; --panel:#0f2621; --input:#12312a; --chip:#163b34; --accent:#7fe8ff; --ok:#56f0b9; --gold:#ffe18a; }
-  body{background:var(--bg); color:var(--fg); font:14px/1.45 system-ui,Segoe UI,Roboto,Inter,Arial; margin:0;}
+
+  /* Base */
+  body{background:var(--bg); color:var(--fg); font:15px/1.45 system-ui,Segoe UI,Roboto,Inter,Arial; margin:0;}
   .wrap{max-width:980px; margin:24px auto 56px; padding:0 16px;}
   h1{margin:0 0 10px; font-weight:900; font-size:22px; letter-spacing:.2px;}
   .top{display:flex; align-items:center; justify-content:space-between; gap:12px}
   .tempo{font-size:36px; font-weight:900; letter-spacing:.5px}
-  select, input[type=number], input[type=text]{width:100%; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:var(--input); color:var(--fg);}
-  input[type=range]{width:100%}
-  .btn{padding:10px 16px; border-radius:12px; border:1px solid var(--line); background:var(--chip); color:var(--fg); cursor:pointer; }
+
+  /* Controls */
+  select, input[type=number], input[type=text]{
+    width:100%; padding:8px 10px; border-radius:var(--radii); border:1px solid var(--line); background:var(--input); color:var(--fg);
+    transition: box-shadow .15s ease, border-color .15s ease, background-color .15s ease;
+  }
+  input[type=range]{ width:100%; }
+
+  select:focus, input:focus{ outline:none; box-shadow: var(--focus); border-color: transparent; }
+
+  .btn{
+    padding:10px 16px; border-radius:var(--radii); border:1px solid var(--line); background:var(--chip); color:var(--fg); cursor:pointer;
+    transition: box-shadow .15s ease, filter .12s ease;
+  }
+  .btn:hover{ filter:brightness(1.05); }
+  .btn:focus{ outline:none; box-shadow: var(--focus); border-color: transparent; }
   .btn.primary{background:var(--accent); color:#00142a; border-color:transparent; font-weight:700}
+
   .status{font-size:12px; color:var(--muted)}
-  .panel{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px;}
-  .grid{display:grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap:12px;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radii-lg); padding:14px;}
+  .grid{display:grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap:var(--gap-m);}
   .field label{display:block; color:var(--muted); font-size:12px; margin-bottom:5px;}
   .row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
   .dot{width:14px; height:14px; border-radius:50%; background:#5a6578; display:inline-block; margin-left:8px}
   .inline{display:flex; align-items:center; gap:8px}
   .muter{position:relative}
-  .menu{position:absolute; top:36px; right:0; width:260px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px; display:none; box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .menu{position:absolute; top:36px; right:0; width:260px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radii); padding:10px; display:none; box-shadow:0 10px 30px rgba(0,0,0,.35)}
   .menu.open{display:block}
-  .menu h4{margin:0 0 8px; font-size:13px; color:var(--fg)}
+  .menu h4{margin:0 0 8px; font-size:13px; color:var(--muted)}
   .menu small{color:var(--muted)}
   .menu .list{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px}
   .chip{padding:6px 10px; border-radius:10px; background:var(--chip); border:1px solid var(--line); color:var(--fg)}
   .help{font-size:12px; color:var(--muted); margin-top:8px}
   .foot{margin-top:12px; font-size:12px; color:var(--muted)}
   .sr{position:absolute; left:-9999px}
+
+  /* Slightly larger targets for touch */
+  .menu input[type=checkbox]{ width:16px; height:16px; }
 </style>
 </head>
 <body data-theme="dark">
@@ -77,23 +106,30 @@
       <div class="field"><label>Subdivisions per Beat</label><input id="subsPerBeat" type="number" value="2" min="1" max="8"></div>
       <div class="field"><label>Min Change</label><input id="minStep" type="number" value="1" min="1" max="60"></div>
       <div class="field"><label>Max Change</label><input id="maxStep" type="number" value="5" min="1" max="60"></div>
-      <div class="field"><label>Bias % (−100…+100)</label><input id="biasPct" type="number" value="0" min="-100" max="100"></div>
+
+      <!-- Bias controls: number + slider, synced on commit for number -->
+      <div class="field">
+        <label for="biasPct">Bias % (−100…+100)</label>
+        <input id="biasPct" type="number" value="0" min="-100" max="100" step="1" aria-describedby="biasHelp">
+        <input id="biasSlider" type="range" value="0" min="-100" max="100" step="1" style="margin-top:6px;">
+        <div id="biasHelp" class="help">Negative = more likely to go down. Positive = more likely to go up.</div>
+      </div>
+
       <div class="field"><label>Volume</label><input id="volume" type="range" value="60" min="0" max="100"></div>
+
       <div class="field muter">
         <label>Mute subdivisions</label>
-        <button class="btn" id="muteBtn">Mute subdivisions ▾</button>
-        <div class="menu" id="muteMenu" role="dialog" aria-modal="true">
+        <button class="btn" id="muteBtn" aria-haspopup="dialog" aria-expanded="false">Mute subdivisions ▾</button>
+        <div class="menu" id="muteMenu" role="dialog" aria-modal="true" aria-label="Subdivision muting menu">
           <h4>Apply muting to count-in</h4>
-          <label class="inline"><input id="applyToCountIn" type="checkbox"/> <span>Include in count‑in</span></label>
+          <label class="inline"><input id="applyToCountIn" type="checkbox"/> <span>Include in count-in</span></label>
           <div style="margin-top:8px"><label>Subdivisions:</label> <span id="subCountBadge" class="chip">2</span></div>
           <div class="list" id="subList"></div>
-          <div class="help">Uncheck sub‑notes to silence them. <button class="btn" id="resetMute">Reset Muting</button></div>
+          <div class="help">Uncheck sub-notes to silence them. <button class="btn" id="resetMute">Reset Muting</button></div>
         </div>
       </div>
     </div>
-    <div class="help">
-      Negative = more likely to go down. Positive = more likely to go up.
-    </div>
+
     <div class="foot">Live volume preview when stopped: move the volume slider.</div>
   </div>
 </div>
@@ -121,6 +157,7 @@
   const minStep = document.getElementById('minStep');
   const maxStep = document.getElementById('maxStep');
   const biasPct = document.getElementById('biasPct');
+  const biasSlider = document.getElementById('biasSlider');
   const volume = document.getElementById('volume');
   const muteBtn = document.getElementById('muteBtn');
   const muteMenu = document.getElementById('muteMenu');
@@ -129,12 +166,106 @@
   const applyToCountIn = document.getElementById('applyToCountIn');
   const resetMute = document.getElementById('resetMute');
 
+  // Bias sync
+  function clampBias(v){
+    v = Number(v);
+    if (!Number.isFinite(v)) v = 0;
+    v = Math.round(v);
+    if (v < -100) v = -100;
+    if (v > 100) v = 100;
+    return v;
+  }
+  let syncingBias = false;
+  function setBias(v){
+    syncingBias = true;
+    const vv = clampBias(v);
+    biasPct.value = String(vv);
+    biasSlider.value = String(vv);
+    syncingBias = false;
+  }
+  function onBiasSlider(){ if (!syncingBias) setBias(biasSlider.value); }
+  biasSlider.addEventListener('input', onBiasSlider);
+  biasSlider.addEventListener('change', onBiasSlider);
+  setBias(biasPct.value || 0);
+
+  // Helpers
+  function isNum(v){ return v !== '' && v !== null && v !== undefined && !isNaN(Number(v)); }
+  const rint = (v)=> String(Math.round(Number(v)));
+
+  // Commit-only range logic for Start/Min/Max
+  let syncingRange = false;
+  function enforceRange(sourceId){
+    if (syncingRange) return;
+    if (!isNum(minTempo.value) || !isNum(maxTempo.value) || !isNum(startTempo.value)) return;
+
+    syncingRange = true;
+    let minV = Number(minTempo.value);
+    let maxV = Number(maxTempo.value);
+    let startV = Number(startTempo.value);
+
+    if (sourceId === 'maxTempo') {
+      if (maxV < minV) { minV = maxV; minTempo.value = rint(minV); }
+      if (startV < minV || startV > maxV) { startV = minV; startTempo.value = rint(startV); }
+    } else if (sourceId === 'minTempo') {
+      if (minV > maxV) { maxV = minV; maxTempo.value = rint(maxV); }
+      if (startV < minV || startV > maxV) { startV = minV; startTempo.value = rint(startV); }
+    } else if (sourceId === 'startTempo') {
+      // Expand range to include start, without altering start
+      if (startV < minV) { minV = startV; minTempo.value = rint(minV); }
+      if (startV > maxV) { maxV = startV; maxTempo.value = rint(maxV); }
+    } else {
+      // Generic init
+      if (minV > maxV) { maxV = minV; maxTempo.value = rint(maxV); }
+      if (startV < minV || startV > maxV) { startV = minV; startTempo.value = rint(startV); }
+    }
+
+    syncingRange = false;
+  }
+
+  function bindCommit(el, onCommit){
+    const commit = () => { onCommit && onCommit(); };
+    el.addEventListener('change', commit);
+    el.addEventListener('blur', commit);
+    el.addEventListener('keydown', (e)=>{
+      if (e.key === 'Enter' || e.code === 'Enter' || e.code === 'NumpadEnter' || e.keyCode === 13) {
+        e.preventDefault();
+        commit();
+        el.blur();
+      }
+    });
+    el.addEventListener('keyup', (e)=>{
+      if (e.key === 'Enter' || e.code === 'Enter' || e.code === 'NumpadEnter' || e.keyCode === 13) {
+        commit();
+      }
+    });
+  }
+
+  // Start/Min/Max with specialized enforcement
+  bindCommit(minTempo, ()=>enforceRange('minTempo'));
+  bindCommit(maxTempo, ()=>enforceRange('maxTempo'));
+  bindCommit(startTempo, ()=>enforceRange('startTempo'));
+
+  // Other numeric inputs: commit-only behavior + any side effects
+  bindCommit(beatsPerTempo, ()=>{});
+  bindCommit(repeatsPerTempo, ()=>{});
+  bindCommit(countInBeats, ()=>{});
+  bindCommit(subsPerBeat, ()=>{ buildSubList(); });
+  bindCommit(minStep, ()=>{});
+  bindCommit(maxStep, ()=>{});
+  bindCommit(biasPct, ()=>{ setBias(biasPct.value); }); // sync number -> slider on commit
+
+  // Initial pass
+  enforceRange();
+
   // Popover
-  muteBtn.addEventListener('click', () => { muteMenu.classList.toggle('open'); buildSubList(); });
+  function setMenuExpanded(open){
+    muteBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    muteMenu.classList.toggle('open', open);
+  }
+  muteBtn.addEventListener('click', (e) => { e.stopPropagation(); setMenuExpanded(!muteMenu.classList.contains('open')); buildSubList(); });
   document.addEventListener('click', (e)=>{
-    if(!muteMenu.contains(e.target) && e.target!==muteBtn){ muteMenu.classList.remove('open'); }
+    if(!muteMenu.contains(e.target) && e.target!==muteBtn){ setMenuExpanded(false); }
   });
-  subsPerBeat.addEventListener('change', buildSubList);
   resetMute.addEventListener('click', () => {
     [...subList.querySelectorAll('input[type=checkbox]')].forEach(cb=>cb.checked=true);
   });
@@ -248,9 +379,7 @@
         while(next < ctx.currentTime + lookahead){
           if(state==='countin'){
             if(ciLeft>0){
-              // apply muting for count-in only if opted-in; otherwise play just the main click
               play('ci', next, 0.95); flash('ci');
-              // (If we ever want subdivided count-in, we'd schedule sub clicks here honoring mask. For now: main beats only.)
               ciLeft--; next += beatInterval; continue;
             }
             // start a fresh cycle
@@ -286,9 +415,10 @@
         }
       }
 
-      refresh();
-      loop && clearInterval(loop);
-      loop=setInterval(tick, 25);
+      function loopTick(){ tick(); }
+      tick();
+      if(loop) clearInterval(loop);
+      loop=setInterval(loopTick, 25);
     });
   }
 

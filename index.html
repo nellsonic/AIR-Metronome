@@ -1,2340 +1,305 @@
-<!DOCTYPE html>
-
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Automatic Incremental &amp; Randomizing (A.I.R.) Metronome</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>A.I.R. Metronome — FIX19 + Deterministic Repeats Engine</title>
 <style>
-    body { background-color: var(--bg); color: var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    input, select, button, label { margin: 5px; font-size: 1rem; }
-    .section { margin: 1em 0; }
-    .inline { display:inline-block; margin: 0 .25rem; }
-    .muted { color:#b0b0b0; font-size:.9rem; }
-  
-  /* -- Pulse dot indicator (ICU-style minimal) -- */
-  .pulse-wrap{display:flex;justify-content:center;margin-top:.3em;margin-bottom:.6em;pointer-events:none;}
-  .pulse-dot{width:18px;height:18px;border-radius:999px;background:#60a5fa; /* matches sky-blue vibe */
-    box-shadow:0 0 0 0 rgba(96,165,250,.55);opacity:0.0;margin:auto}
-  .pulse-dot.boom{animation:pulse 320ms ease-out 1}
-  @keyframes pulse{
-    0%   {transform:scale(1); box-shadow:0 0 0 0 rgba(96,165,250,.55); opacity:0.0;}
-    10%  {opacity:1;}
-    60%  {transform:scale(2.4); box-shadow:0 0 0 16px rgba(96,165,250,.15); opacity:1;}
-    100% {transform:scale(3.0); box-shadow:0 0 0 22px rgba(96,165,250,.05); opacity:0;}
-  }
-
-
-  .inline-btn{ display:inline-block; margin:0 .25rem; padding:.35rem .6rem; border:1px solid #444; border-radius:.5rem; background:#1e1e1e; color:#f0f0f0; cursor:pointer; }
-  .inline-btn:active{ transform:translateY(1px); }
-
-    /* Compact numeric boxes: ~4 chars incl. decimal */
-    .n4 { width: 6.5ch; text-align: right; }
-    .n4::-webkit-outer-spin-button,
-    .n4::-webkit-inner-spin-button { margin: 0; }
-    
-  /* THEME TOKENS */
   :root{
-    --bg:#121212;
-    --panel:#1e1e1e;
-    --text:#f0f0f0;
-    --muted:#9aa0a6;
-    --border:#2f2f2f;
-    --accent:#60a5fa;
+    --bg:#0d1117; --fg:#e6edf3; --muted:#9fb0c3; --line:#2b3444; --panel:#0f1623;
+    --accent:#4fb3ff; --ok:#49d39e; --gold:#ffcc3d; --danger:#ff6b6b;
+    --input:#111a2b; --chip:#172235;
   }
-  input,select,button,label{ color: var(--text); }
-  input,select,button{
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: .45rem;
-    padding: .5rem .6rem;
-  }
-  label{ font-weight:600; color: var(--text); }
-  .muted{ color: var(--muted); }
-  .inline-btn{ border-color: var(--border); background: var(--panel); color: var(--text); }
-
-  /* Pulse adopts accent */
-  .pulse-dot{ background: var(--accent); box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent); }
-  @keyframes pulse{
-    0%   {transform:scale(1); box-shadow:0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent); opacity:0.0;}
-    10%  {opacity:1;}
-    60%  {transform:scale(2.4); box-shadow:0 0 0 16px color-mix(in oklab, var(--accent) 15%, transparent); opacity:1;}
-    100% {transform:scale(3.0); box-shadow:0 0 0 22px color-mix(in oklab, var(--accent) 5%, transparent); opacity:0;}
-  }
-
-  /* BLUE */
-  :root[data-theme='blue']{
-    --bg:#243b59;
-    --panel:#2c4870;
-    --text:#f5f8ff;
-    --muted:#afc3db;
-    --border:rgba(59,130,246,.30);
-    --accent:#60a5fa;
-  }
-  /* YELLOW */
-  :root[data-theme='yellow']{
-    --bg:#E3B614;
-    --panel:#D19B06;
-    --text:#0b0b0b;
-    --muted:#5b4a0c;
-    --border:rgba(161,98,7,.45);
-    --accent:#F2C316;
-  }
-  /* GREEN */
-  :root[data-theme='green']{
-    --bg:#0f2a22;
-    --panel:#163a2f;
-    --text:#f3fff8;
-    --muted:#a7d3bf;
-    --border:rgba(16,185,129,.35);
-    --accent:#22c55e;
-  }
-  /* RED */
-  :root[data-theme='red']{
-    --bg:#2a0f12;
-    --panel:#3a161b;
-    --text:#fff5f6;
-    --muted:#f3b3b9;
-    --border:rgba(244,63,94,.35);
-    --accent:#ef4444;
-  }
-
-
-
-
-
-/* Keep volume slider the same physical size as before */
-#volume {
-  width: 240px;
-  vertical-align: middle;
-}
-
-/* Custom filled-track effect that reaches the far right at 100% */
-#volume {
-  /* Base track background (unfilled) uses panel color */
-  background: linear-gradient(to right, var(--accent) 0%, var(--accent) 0%, var(--panel) 0%, var(--panel) 100%);
-  background-repeat: no-repeat;
-  border: 1px solid var(--border);
-  border-radius: .45rem;
-}
-
-/* === Custom compact slider for #volume (fills fully at 100%) === */
-#volume {
-  width: 240px;              /* keep original size */
-  height: 14px;
-  appearance: none;
-  -webkit-appearance: none;
-  background:
-    linear-gradient(var(--accent, #60a5fa) 0 0) no-repeat,
-    linear-gradient(var(--panel, #1e1e1e) 0 0) no-repeat;
-  background-size:
-    calc((var(--volVal, 0) - var(--volMin, 0)) * 100% / max(1, (var(--volMax, 100) - var(--volMin, 0)))) 100%,
-    100% 100%;
-  border: 1px solid var(--border, #2f2f2f);
-  border-radius: 999px;
-  vertical-align: middle;
-  outline: none;
-}
-/* WebKit thumb */
-#volume::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--text, #f0f0f0);
-  border: 2px solid var(--accent, #60a5fa);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 15%, transparent);
-  margin-top: -2px; /* visually center on 14px track */
-  cursor: pointer;
-}
-#volume::-webkit-slider-runnable-track {
-  height: 14px;
-  background: transparent;
-  border: none;
-}
-/* Firefox track/progress */
-#volume::-moz-range-track {
-  height: 14px;
-  background: var(--panel, #1e1e1e);
-  border: 1px solid var(--border, #2f2f2f);
-  border-radius: 999px;
-}
-#volume::-moz-range-progress {
-  height: 14px;
-  background: var(--accent, #60a5fa);
-  border: 1px solid var(--border, #2f2f2f);
-  border-radius: 999px;
-}
-#volume::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--text, #f0f0f0);
-  border: 2px solid var(--accent, #60a5fa);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 15%, transparent);
-  cursor: pointer;
-}
-
-/* Rounded fill edge for #volume at all positions including 100% */
-#volume::-webkit-slider-runnable-track {
-  border-radius: 999px;
-  overflow: hidden;
-}
-#volume::-moz-range-progress {
-  border-radius: 999px;
-}
-#volume::-moz-range-track {
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-/* Adjust #volume slider height so the thumb visually fills space better */
-#volume {
-  height: 10px;
-}
-#volume::-webkit-slider-runnable-track {
-  height: 10px;
-}
-#volume::-moz-range-track,
-#volume::-moz-range-progress {
-  height: 10px;
-}
-#volume::-webkit-slider-thumb {
-  margin-top: -4px; /* recenter thumb vertically */
-}
-
-/* Refined proportions: thinner track, full circular thumb */
-#volume {
-  height: 14px;
-}
-#volume::-webkit-slider-runnable-track {
-  height: 6px;
-  margin-top: 4px;
-  border-radius: 999px;
-}
-#volume::-moz-range-track,
-#volume::-moz-range-progress {
-  height: 6px;
-  border-radius: 999px;
-}
-#volume::-webkit-slider-thumb {
-  width: 18px;
-  height: 18px;
-  margin-top: -6px; /* centers circular thumb visually */
-}
-
-/* === Sleeker track + large circular thumb that stands out === */
-#volume {
-  width: 240px;           /* keep original width */
-  height: 24px;           /* provide vertical room for a bigger thumb */
-  vertical-align: middle;
-}
-
-/* WebKit/Blink */
-#volume::-webkit-slider-runnable-track {
-  height: 6px;            /* sleeker track */
-  margin: 9px 0;          /* centers the track within the 24px control height */
-  border-radius: 999px;
-  background: transparent; /* we paint via gradients on the input itself */
-}
-#volume::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;            /* large, clearly circular knob */
-  height: 20px;
-  border-radius: 50%;
-  background: var(--text, #f0f0f0);
-  border: 2px solid var(--accent, #60a5fa);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 15%, transparent);
-  cursor: pointer;
-  margin-top: -7px;       /* centers the thumb over the 6px track ( (20-6)/2 = 7 ) */
-}
-
-/* Firefox */
-#volume::-moz-range-track {
-  height: 6px;            /* sleeker track */
-  border-radius: 999px;
-  background: var(--panel, #1e1e1e);
-  border: 1px solid var(--border, #2f2f2f);
-}
-#volume::-moz-range-progress {
-  height: 6px;
-  border-radius: 999px;   /* rounded fill edge */
-  background: var(--accent, #60a5fa);
-  border: 1px solid var(--border, #2f2f2f);
-}
-#volume::-moz-range-thumb {
-  width: 20px;            /* large circular knob */
-  height: 20px;
-  border-radius: 50%;
-  background: var(--text, #f0f0f0);
-  border: 2px solid var(--accent, #60a5fa);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 15%, transparent);
-  cursor: pointer;
-}
-
-/* Keep the input's gradient-based fill so it reaches the right edge at 100% */
-#volume {
-  background:
-    linear-gradient(var(--accent, #60a5fa) 0 0) no-repeat,
-    linear-gradient(var(--panel, #1e1e1e) 0 0) no-repeat;
-  background-size:
-    calc((var(--volVal, 0) - var(--volMin, 0)) * 100% / max(1, (var(--volMax, 100) - var(--volMin, 0)))) 100%,
-    100% 100%;
-  border: 1px solid var(--border, #2f2f2f);
-  border-radius: 999px;
-}
-
-/* === FINAL slider overrides: thin track, big round thumb, no thick frame === */
-#volume {
-  width: 240px;
-  height: 24px;
-  appearance: none;
-  -webkit-appearance: none;
-  border: 0 !important;
-  padding: 0 !important;
-  border-radius: 999px;
-  /* Paint fill on the input itself so it reaches the right edge at 100% */
-  background:
-    linear-gradient(var(--accent, #60a5fa) 0 0) no-repeat,
-    linear-gradient(var(--panel, #1e1e1e) 0 0) no-repeat;
-  background-size:
-    calc((var(--volVal, 0) - var(--volMin, 0)) * 100% / max(1, (var(--volMax, 100) - var(--volMin, 0)))) 100%,
-    100% 100%;
-}
-
-/* WebKit/Blink track+thumb */
-#volume::-webkit-slider-runnable-track {
-  height: 6px;
-  background: transparent;
-  border: 0;
-  border-radius: 999px;
-}
-#volume::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--text, #f0f0f0);
-  border: 2px solid var(--accent, #60a5fa);
-  margin-top: -7px; /* centers thumb over 6px track */
-  box-shadow: none;
-  cursor: pointer;
-}
-
-/* Firefox track/progress/thumb */
-#volume::-moz-range-track {
-  height: 6px;
-  background: var(--panel, #1e1e1e);
-  border: 0;
-  border-radius: 999px;
-}
-#volume::-moz-range-progress {
-  height: 6px;
-  background: var(--accent, #60a5fa);
-  border: 0;
-  border-radius: 999px;
-}
-#volume::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--text, #f0f0f0);
-  border: 2px solid var(--accent, #60a5fa);
-  box-shadow: none;
-  cursor: pointer;
-}
-
-/* === Native #volume slider: thin track, big round dot, full fill at 100% === */
-input#volume {
-  width: 240px !important;
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  background:
-    linear-gradient(var(--accent, #60a5fa) 0 0) no-repeat,
-    linear-gradient(var(--panel, #1e1e1e) 0 0) no-repeat !important;
-  background-size: calc(var(--volPct, 0) * 1%) 100%, 100% 100% !important;
-  border: 0 !important;
-  padding: 0 !important;
-  height: 24px !important;            /* overall control height */
-  border-radius: 999px !important;
-  vertical-align: middle !important;
-  outline: none !important;
-}
-
-/* WebKit/Blink track + thumb */
-input#volume::-webkit-slider-runnable-track {
-  height: 6px !important;             /* thin track */
-  background: transparent !important; /* we paint via the input's background */
-  border: 0 !important;
-  border-radius: 999px !important;
-  margin: 9px 0 !important;           /* center track inside 24px control */
-}
-input#volume::-webkit-slider-thumb {
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  width: 20px !important;
-  height: 20px !important;
-  border-radius: 50% !important;
-  background: var(--text, #f0f0f0) !important;
-  border: 2px solid var(--accent, #60a5fa) !important;
-  box-shadow: none !important;
-  margin-top: -7px !important;        /* center over 6px track */
-  cursor: pointer !important;
-}
-
-/* Firefox */
-input#volume::-moz-range-track {
-  height: 6px !important;
-  background: var(--panel, #1e1e1e) !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-}
-input#volume::-moz-range-progress {
-  height: 6px !important;
-  background: var(--accent, #60a5fa) !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-}
-input#volume::-moz-range-thumb {
-  width: 20px !important;
-  height: 20px !important;
-  border-radius: 50% !important;
-  background: var(--text, #f0f0f0) !important;
-  border: 2px solid var(--accent, #60a5fa) !important;
-  box-shadow: none !important;
-  cursor: pointer !important;
-}
-
-/* === Visible native #volume slider: thin track, round thumb, full fill === */
-input#volume {
-  width: 240px !important;
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  background:
-    linear-gradient(var(--accent, #60a5fa) 0 0) no-repeat,
-    linear-gradient(var(--panel, #1e1e1e) 0 0) no-repeat !important;
-  background-size: calc(var(--volPct, 0) * 1%) 100%, 100% 100% !important;
-  border: 0 !important;
-  padding: 0 !important;
-  height: 24px !important;            /* overall control height for centering */
-  border-radius: 999px !important;
-  vertical-align: middle !important;
-  outline: none !important;
-}
-
-/* WebKit/Blink: thin track + large round thumb */
-input#volume::-webkit-slider-runnable-track {
-  height: 6px !important;
-  background: transparent !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-  margin: 9px 0 !important;           /* center track inside control height */
-}
-input#volume::-webkit-slider-thumb {
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  width: 20px !important;
-  height: 20px !important;
-  border-radius: 50% !important;
-  background: var(--text, #f0f0f0) !important;
-  border: 2px solid var(--accent, #60a5fa) !important;
-  box-shadow: none !important;
-  margin-top: -7px !important;        /* center over 6px track */
-  cursor: pointer !important;
-}
-
-/* Firefox: use progress + track for fill */
-input#volume::-moz-range-track {
-  height: 6px !important;
-  background: var(--panel, #1e1e1e) !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-}
-input#volume::-moz-range-progress {
-  height: 6px !important;
-  background: var(--accent, #60a5fa) !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-}
-input#volume::-moz-range-thumb {
-  width: 20px !important;
-  height: 20px !important;
-  border-radius: 50% !important;
-  background: var(--text, #f0f0f0) !important;
-  border: 2px solid var(--accent, #60a5fa) !important;
-  box-shadow: none !important;
-  cursor: pointer !important;
-}
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-
-/* FIX41: inline '+' rendering, remove overlay */
-
-
-
-
-
-
-
-/* FIX42: Bias '+' overlay for positive numbers, aligned with minus sign */
-.bias-overlay-wrap {
-  position: relative;
-  display: inline-block;
-}
-.bias-overlay-wrap input[type="number"] {
-  padding-left: 20px !important;
-}
-.bias-overlay-plus {
-  position: absolute;
-  left: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: var(--text-color, #fff);
-  opacity: 0.9;
-  font-weight: 500;
-  font-size: 1em;
-  font-family: inherit;
-  user-select: none;
-}
-.bias-overlay-wrap:not(.bias-positive) .bias-overlay-plus {
-  display: none;
-}
-
+  [data-theme="light"]{ --bg:#f4efe7; --fg:#1d2430; --muted:#5a606b; --line:#d9cfbf; --panel:#f5f1ea; --input:#ffffff; --chip:#fff9ef; --accent:#1a66ff; --ok:#0f8e64; --gold:#b07d00; }
+  [data-theme="yellow"]{ --bg:#e1b507; --fg:#17130a; --muted:#3a301a; --line:#d0a908; --panel:#f0c427; --input:#fff4b4; --chip:#ffe780; --accent:#0f3b9e; --ok:#0f6c4a; --gold:#7a5600; }
+  [data-theme="red"]{ --bg:#25080b; --fg:#ffecec; --muted:#ffb3b3; --line:#62222a; --panel:#2e0e13; --input:#3a141a; --chip:#47171d; --accent:#ff8aa0; --ok:#62e0b9; --gold:#ffd56b; }
+  [data-theme="green"]{ --bg:#0b1c18; --fg:#e6fff7; --muted:#9ad5c3; --line:#1d3a33; --panel:#0f2621; --input:#12312a; --chip:#163b34; --accent:#7fe8ff; --ok:#56f0b9; --gold:#ffe18a; }
+  body{background:var(--bg); color:var(--fg); font:14px/1.45 system-ui,Segoe UI,Roboto,Inter,Arial; margin:0;}
+  .wrap{max-width:980px; margin:24px auto 56px; padding:0 16px;}
+  h1{margin:0 0 10px; font-weight:900; font-size:22px; letter-spacing:.2px;}
+  .top{display:flex; align-items:center; justify-content:space-between; gap:12px}
+  .tempo{font-size:36px; font-weight:900; letter-spacing:.5px}
+  select, input[type=number], input[type=text]{width:100%; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:var(--input); color:var(--fg);}
+  input[type=range]{width:100%}
+  .btn{padding:10px 16px; border-radius:12px; border:1px solid var(--line); background:var(--chip); color:var(--fg); cursor:pointer; }
+  .btn.primary{background:var(--accent); color:#00142a; border-color:transparent; font-weight:700}
+  .status{font-size:12px; color:var(--muted)}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px;}
+  .grid{display:grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap:12px;}
+  .field label{display:block; color:var(--muted); font-size:12px; margin-bottom:5px;}
+  .row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .dot{width:14px; height:14px; border-radius:50%; background:#5a6578; display:inline-block; margin-left:8px}
+  .inline{display:flex; align-items:center; gap:8px}
+  .muter{position:relative}
+  .menu{position:absolute; top:36px; right:0; width:260px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px; display:none; box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .menu.open{display:block}
+  .menu h4{margin:0 0 8px; font-size:13px; color:var(--fg)}
+  .menu small{color:var(--muted)}
+  .menu .list{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px}
+  .chip{padding:6px 10px; border-radius:10px; background:var(--chip); border:1px solid var(--line); color:var(--fg)}
+  .help{font-size:12px; color:var(--muted); margin-top:8px}
+  .foot{margin-top:12px; font-size:12px; color:var(--muted)}
+  .sr{position:absolute; left:-9999px}
 </style>
-<style>
+</head>
+<body data-theme="dark">
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Automatic Incremental & Randomizing (A.I.R.) Metronome</h1>
+      <div class="inline">
+        <div class="tempo"><span id="tempoNow">60</span></div>
+        <span class="status" id="status">Stopped</span>
+        <span class="dot" id="pulse"></span>
+      </div>
+    </div>
+    <div class="inline">
+      <label class="sr" for="theme">Theme</label>
+      <select id="theme">
+        <option value="dark">Dark</option>
+        <option value="light">Light (tan)</option>
+        <option value="yellow">Yellow</option>
+        <option value="red">Red</option>
+        <option value="green">Green</option>
+      </select>
+      <button class="btn primary" id="startStop">Start</button>
+    </div>
+  </div>
 
-/* Sleek circular-dot slider styling (Volume) */
-input#volume {
-  appearance: none;
-  -webkit-appearance: none;
-  height: 28px; /* control height to center the thumb over a thin track */
-  background: transparent;
-  outline: none;
-  padding: 0;
-  margin: 0;
-}
-input#volume::-webkit-slider-runnable-track {
-  height: 6px;
-  background: var(--panel, #1e1e1e);
-  border-radius: 999px;
-  border: 1px solid var(--border, rgba(255,255,255,.15));
-}
-input#volume::-moz-range-track {
-  height: 6px;
-  background: var(--panel, #1e1e1e);
-  border-radius: 999px;
-  border: 1px solid var(--border, rgba(255,255,255,.15));
-}
-input#volume::-moz-range-progress {
-  height: 6px;
-  background: var(--accent, #60a5fa);
-  border-radius: 999px;
-}
-input#volume::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--text, #f0f0f0);
-  border: 2px solid var(--accent, #60a5fa);
-  margin-top: -7px; /* centers 20px thumb over 6px track */
-  cursor: pointer;
-}
-input#volume::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--text, #f0f0f0);
-  border: 2px solid var(--accent, #60a5fa);
-  cursor: pointer;
-}
-
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style>
-<style>
-
-/* Bias slider (display-only mirror) */
-input#biasSlider{
-  appearance:none; -webkit-appearance:none;
-  height:28px; background:transparent; outline:none; padding:0; margin:0 0 0 .25rem; opacity:.85;
-}
-input#biasSlider::-webkit-slider-runnable-track{
-  height:6px; background:var(--panel,#1e1e1e); border-radius:999px;
-  border:1px solid var(--border,rgba(255,255,255,.15));
-}
-input#biasSlider::-moz-range-track{
-  height:6px; background:var(--panel,#1e1e1e); border-radius:999px;
-  border:1px solid var(--border,rgba(255,255,255,.15));
-}
-input#biasSlider::-moz-range-progress{
-  height:6px; background:var(--accent,#60a5fa); border-radius:999px;
-}
-input#biasSlider::-webkit-slider-thumb{
-  -webkit-appearance:none; appearance:none;
-  width:20px; height:20px; border-radius:50%;
-  background:var(--text,#f0f0f0); border:2px solid var(--accent,#60a5fa);
-  margin-top:-7px; cursor:default;
-}
-input#biasSlider::-moz-range-thumb{
-  width:20px; height:20px; border-radius:50%;
-  background:var(--text,#f0f0f0); border:2px solid var(--accent,#60a5fa);
-  cursor:default;
-}
-
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style>
-<style>
-/*__air_pulse__*/ 
-@keyframes __air_boom { 
-  0%{transform:scale(1);opacity:0.0} 
-  10%{opacity:1} 
-  60%{transform:scale(2.0);opacity:1} 
-  100%{transform:scale(2.8);opacity:0} 
-}
-#__pulse_wrap__ #pulseDot.__boom{animation:__air_boom 280ms ease-out 1; opacity:1;}
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-/* === A.I.R. unified slider skin (non-destructive) === */
-input[type="range"]{
-  -webkit-appearance:none;
-  appearance:none;
-  height: 28px; /* hit target */
-  width: 100%;
-  background: transparent;
-  margin: 4px 0;
-  padding: 0;
-}
-/* Track */
-input[type="range"]::-webkit-slider-runnable-track{
-  height: 6px;
-  background: linear-gradient(180deg, #2b2f3a 0%, #232730 100%);
-  border: 1px solid #3a3f4c;
-  border-radius: 999px;
-}
-input[type="range"]::-moz-range-track{
-  height: 6px;
-  background: linear-gradient(180deg, #2b2f3a 0%, #232730 100%);
-  border: 1px solid #3a3f4c;
-  border-radius: 999px;
-}
-input[type="range"]::-ms-track{
-  height: 6px;
-  background: transparent;
-  border-color: transparent;
-  color: transparent;
-}
-input[type="range"]::-ms-fill-lower,
-input[type="range"]::-ms-fill-upper{
-  background: linear-gradient(180deg, #2b2f3a 0%, #232730 100%);
-  border: 1px solid #3a3f4c;
-  border-radius: 999px;
-}
-
-/* Thumb */
-input[type="range"]::-webkit-slider-thumb{
-  -webkit-appearance:none;
-  appearance:none;
-  width: 18px; height: 18px;
-  background: #9bd0ff;
-  border: 1px solid #1e2430;
-  border-radius: 50%;
-  margin-top: -6px; /* centers on 6px track */
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.25);
-}
-input[type="range"]::-moz-range-thumb{
-  width: 18px; height: 18px;
-  background: #9bd0ff;
-  border: 1px solid #1e2430;
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.25);
-}
-input[type="range"]::-ms-thumb{
-  width: 18px; height: 18px;
-  background: #9bd0ff;
-  border: 1px solid #1e2430;
-  border-radius: 50%;
-}
-
-/* Focus/hover */
-input[type="range"]:hover::-webkit-slider-thumb,
-input[type="range"]:focus::-webkit-slider-thumb{
-  background: #c3e4ff;
-}
-input[type="range"]:hover::-moz-range-thumb,
-input[type="range"]:focus::-moz-range-thumb{
-  background: #c3e4ff;
-}
-input[type="range"]:focus{ outline: none; }
-
-/* Disabled */
-input[type="range"]:disabled::-webkit-slider-thumb,
-input[type="range"]:disabled::-moz-range-thumb,
-input[type="range"]:disabled::-ms-thumb{
-  background:#6f7a8d;
-  border-color:#2b3342;
-}
-input[type="range"]:disabled::-webkit-slider-runnable-track,
-input[type="range"]:disabled::-moz-range-track{
-  background:#2a2f39;
-  border-color:#384152;
-}
-
-/* Optional compact class for narrow panels */
-.compact-range input[type="range"]{
-  height: 22px;
-}
-.compact-range input[type="range"]::-webkit-slider-thumb{
-  width: 14px; height: 14px; margin-top:-4px;
-}
-.compact-range input[type="range"]::-moz-range-thumb{
-  width: 14px; height: 14px;
-}
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-/* === A.I.R. Slider Clean Skin (uniform look, minimal overrides) === */
-:root{
-  --air-slider-track:#44506a;
-  --air-slider-track-dim:#3a455c;
-  --air-slider-thumb:#cfe6ff;
-  --air-slider-thumb-border:#162031;
-}
-input[type="range"].air-slider{
-  -webkit-appearance:none;
-  appearance:none;
-  width:100%;
-  height:28px;
-  background:transparent;
-  margin:6px 0;
-}
-/* Track */
-input[type="range"].air-slider::-webkit-slider-runnable-track{
-  height:6px;
-  background:linear-gradient(180deg,var(--air-slider-track) 0%,var(--air-slider-track-dim) 100%);
-  border-radius:999px;
-}
-input[type="range"].air-slider::-moz-range-track{
-  height:6px;
-  background:linear-gradient(180deg,var(--air-slider-track) 0%,var(--air-slider-track-dim) 100%);
-  border-radius:999px;
-}
-/* Thumb */
-input[type="range"].air-slider::-webkit-slider-thumb{
-  -webkit-appearance:none;
-  appearance:none;
-  width:16px;height:16px;border-radius:50%;
-  background:var(--air-slider-thumb);
-  border:1px solid var(--air-slider-thumb-border);
-  margin-top:-5px;
-  box-shadow:0 0 0 2px rgba(0,0,0,.2);
-}
-input[type="range"].air-slider::-moz-range-thumb{
-  width:16px;height:16px;border-radius:50%;
-  background:var(--air-slider-thumb);
-  border:1px solid var(--air-slider-thumb-border);
-  box-shadow:0 0 0 2px rgba(0,0,0,.2);
-}
-input[type="range"].air-slider:focus{outline:none}
-/* Compact option */
-.compact-range input[type="range"].air-slider{height:22px}
-.compact-range input[type="range"].air-slider::-webkit-slider-thumb{width:14px;height:14px;margin-top:-4px}
-.compact-range input[type="range"].air-slider::-moz-range-thumb{width:14px;height:14px}
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-/* === A.I.R. Custom Slider (pixel-consistent across browsers) === */
-.air-skin{position:relative; display:block; width:100%; height:28px; touch-action:none; user-select:none}
-.air-skin .air-track{position:absolute; left:0; right:0; top:50%; height:6px; transform:translateY(-50%);
-  background:linear-gradient(180deg,#44506a 0%, #3a455c 100%); border-radius:999px;}
-.air-skin .air-thumb{position:absolute; top:50%; width:16px; height:16px; transform:translate(-50%,-50%);
-  border-radius:50%; background:#cfe6ff; border:1px solid #162031; box-shadow:0 0 0 2px rgba(0,0,0,.2);}
-/* focus halo */
-.air-skin.is-focus .air-thumb{box-shadow:0 0 0 3px rgba(147,197,253,.45), 0 0 0 2px rgba(0,0,0,.2);}
-/* disabled */
-.air-skin.is-disabled .air-track{opacity:.55}
-.air-skin.is-disabled .air-thumb{background:#9fb2c9; border-color:#2b3342}
-/* hide the native slider but keep it in flow for layout width */
-.air-skin input[type=range].air-native{
-  position:absolute; inset:0; width:100%; height:100%; opacity:0; pointer-events:none;
-}
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-/* Keep custom sliders full-row and above any rules beneath */
-.air-skin{ display:block; width:100%; position:relative; z-index:2; margin:14px 0; }
-.air-skin .air-track{ z-index:2; }
-.air-skin .air-thumb{ z-index:3; }
-/* Give hr extra breathing room so it never visually overlaps sliders */
-hr{ margin-top:26px !important; margin-bottom:26px !important; }
-/* If any hr sits immediately above/below a slider, push it further */
-hr + .air-skin{ margin-top:10px; }
-.air-skin + hr{ margin-top:20px; }
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-/* Ensure native range is fully invisible—no background, no shadow, no outline */
-.air-skin input[type=range].air-native{
-  position:absolute; inset:0; width:100%; height:100%;
-  opacity:0 !important;
-  -webkit-appearance:none !important;
-  -moz-appearance:none !important;
-  appearance:none !important;
-  background:transparent !important;
-  border:0 !important;
-  outline:0 !important;
-  box-shadow:none !important;
-  filter:none !important;
-  pointer-events:none !important;
-}
-/* Some frameworks wrap ranges with a pill background using ::before/::after—neutralize if present */
-.air-skin::before,
-.air-skin::after{ content:none !important; }
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-/* === A.I.R. tight, responsive sliders ===
-   Goal: clearly shorter than other controls, looks good on any screen.
-*/
-.air-skin{
-  /* center, and keep modest width */
-  width: clamp(240px, 56%, 520px);
-  margin: 10px auto;
-  height: 22px;
-}
-.air-skin .air-track{ height:4px; }
-.air-skin .air-thumb{ width:12px; height:12px; }
-/* Avoid overlap with nearby rules */
-.air-skin + hr{ margin-top: 22px; }
-hr + .air-skin{ margin-top: 12px; }
-/* Touch-friendly on phones/tablets while staying compact */
-@media (pointer: coarse), (max-width: 640px){
-  .air-skin{
-    width: clamp(220px, 88vw, 520px); /* fill most of small screens without edge-to-edge */
-    height: 26px;
-  }
-  .air-skin .air-track{ height:5px; }
-  .air-skin .air-thumb{ width:14px; height:14px; }
-}
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-#muteSubsDetails summary::-webkit-details-marker{display:none;}
-#muteSubsDetails[open] > #muteSubsPanel{display:block;}
-#muteSubsDetails{position:relative;z-index:100000;}
-#muteSubsWrap .btn-like:hover{background:#1b2336;}
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-/* Ensure the mute menu opens above sliders and is always clickable */
-#muteSubsDetails { position: relative; z-index: 100000; }
-#muteSubsDetails > summary { position: relative; z-index: 100001; pointer-events: auto; }
-#muteSubsPanel { position: absolute; right: 0; z-index: 100002; }
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-#muteSubsBoxes label{display:inline-flex;align-items:center;gap:6px;padding:2px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03)}
-#muteSubsBoxes input[type="checkbox"]{transform:scale(1.0);}
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-#muteSubsPanel label,
-#muteSubsPanel,
-#muteSubsPanel span,
-#muteSubsPanel button {
-  color: #cbd5e1 !important; /* soft gray-blue matching existing text */
-}
-#muteSubsPanel input[type="checkbox"] {
-  accent-color: #94a3b8; /* matches subdued slider thumb color */
-}
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-#muteSubsPanel label[for="muteSubsApplyToCI"],
-#muteSubsPanel label:has(#muteSubsApplyToCI) {
-  font-size: 0.875rem !important; /* matches "Subdivisions" size */
-  font-weight: normal !important;
-  line-height: 1.4;
-  color: #cbd5e1 !important;
-}
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-#biasValueRow input[type="number"]{ width:64px; }
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style><style>
-#muteSubsPanel label,
-#muteSubsPanel,
-#muteSubsPanel span,
-#muteSubsPanel button {
-  color: #cbd5e1 !important;
-}
-#muteSubsPanel input[type="checkbox"] {
-  accent-color: #94a3b8;
-}
-/* If the 'Apply muting to count-in' label exists, size it to match the Subdivisions line */
-#muteSubsPanel label[for="muteSubsApplyToCI"],
-#muteSubsPanel label:has(#muteSubsApplyToCI) {
-  font-size: 0.875rem !important;
-  font-weight: normal !important;
-  line-height: 1.4;
-  color: #cbd5e1 !important;
-}
-
-/* bias-disabled-style */
-.bias-disabled{opacity:0.5}
-</style></head>
-<body>
-<h1>Automatic Incremental &amp; Randomizing (A.I.R.) Metronome</h1>
-<div id="currentTempoDisplay" style="font-size:1.8rem;font-weight:700;color:var(--accent);margin:.25em 0 .6em;">Current Tempo: <span id="currentTempo">60</span></div>
-<div class="section" id="useCurrSection" style="text-align:center;">
-<input id="useCurrentAsStart" type="checkbox"/>
-<label for="useCurrentAsStart">Use Current Tempo as Start Tempo</label>
+  <div class="panel">
+    <div class="grid">
+      <div class="field"><label>Start Tempo</label><input id="startTempo" type="number" value="60" min="20" max="300"></div>
+      <div class="field"><label>Min Tempo</label><input id="minTempo" type="number" value="40" min="20" max="300"></div>
+      <div class="field"><label>Max Tempo</label><input id="maxTempo" type="number" value="180" min="20" max="300"></div>
+      <div class="field"><label>Beats per Tempo</label><input id="beatsPerTempo" type="number" value="4" min="1" max="16"></div>
+      <div class="field"><label>Repeats per Tempo</label><input id="repeatsPerTempo" type="number" value="2" min="1" max="64"></div>
+      <div class="field"><label>Count-In Beats (every cycle)</label><input id="countInBeats" type="number" value="2" min="0" max="16"></div>
+      <div class="field"><label>Subdivisions per Beat</label><input id="subsPerBeat" type="number" value="2" min="1" max="8"></div>
+      <div class="field"><label>Min Change</label><input id="minStep" type="number" value="1" min="1" max="60"></div>
+      <div class="field"><label>Max Change</label><input id="maxStep" type="number" value="5" min="1" max="60"></div>
+      <div class="field"><label>Bias % (−100…+100)</label><input id="biasPct" type="number" value="0" min="-100" max="100"></div>
+      <div class="field"><label>Volume</label><input id="volume" type="range" value="60" min="0" max="100"></div>
+      <div class="field muter">
+        <label>Mute subdivisions</label>
+        <button class="btn" id="muteBtn">Mute subdivisions ▾</button>
+        <div class="menu" id="muteMenu" role="dialog" aria-modal="true">
+          <h4>Apply muting to count-in</h4>
+          <label class="inline"><input id="applyToCountIn" type="checkbox"/> <span>Include in count‑in</span></label>
+          <div style="margin-top:8px"><label>Subdivisions:</label> <span id="subCountBadge" class="chip">2</span></div>
+          <div class="list" id="subList"></div>
+          <div class="help">Uncheck sub‑notes to silence them. <button class="btn" id="resetMute">Reset Muting</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="help">
+      Negative = more likely to go down. Positive = more likely to go up.
+    </div>
+    <div class="foot">Live volume preview when stopped: move the volume slider.</div>
+  </div>
 </div>
-<div class="pulse-wrap"><div class="pulse-dot" id="pulseDot"></div></div>
-<div class="section" id="themeRow" style="text-align:right;">
-<label for="themeSel" style="margin-right:.35rem;">Theme:</label>
-<select id="themeSel">
-<option value="">Default</option>
-<option value="blue">Blue</option>
-<option value="yellow">Yellow</option>
-<option value="green">Green</option>
-<option value="red">Red</option>
-</select>
-</div>
-<div class="section">
-<label for="startTempo">Start Tempo:</label>
-<input class="n4" id="startTempo" max="300" min="10" step="0.5" type="number" value="60"/>
-<label for="minTempo">Min Tempo:</label>
-<input class="n4" id="minTempo" max="300" min="10" step="0.5" type="number" value="40"/>
-<label for="maxTempo">Max Tempo:</label>
-<input class="n4" id="maxTempo" max="300" min="10" step="0.5" type="number" value="120"/>
-</div>
-<div class="section" id="halfTemposRow">
-<input id="halfBeats" type="checkbox"/>
-<label for="halfBeats">Use Half-Beat Tempo Increments</label>
-</div>
-<div class="section">
-<label for="minChange">Min Change:</label>
-<input class="n4" id="minChange" max="100" min="0" step="0.5" type="number" value="1"/>
-<label for="maxChange">Max Change:</label>
-<input class="n4" id="maxChange" max="100" min="0" step="0.5" type="number" value="5"/>
-</div>
-<div class="section">
-<label for="beatsPerTempo">Beats per Tempo:</label>
-<input class="n4" id="beatsPerTempo" min="1" step="1" type="number" value="4"/>
-<label for="subdivision">Subdivision:</label>
-<select id="subdivision">
-<option value="1">Quarter Notes</option>
-<option value="2">8th Notes</option>
-<option value="3">Triplets</option>
-<option value="4">16th Notes</option>
-<option value="5">5's</option>
-<option value="6">6's</option>
-<option value="7">7's</option>
-</select><span id="muteSubsWrap" style="display:inline-block;margin-left:10px;vertical-align:middle;"><details id="muteSubsDetails" style="display:inline-block;position:relative;"><summary class="btn-like" style="cursor:pointer;list-style:none;padding:4px 8px;border:1px solid #303643;border-radius:6px;font-size:0.9em;background:#0f172a;color:#c7d2fe;">Mute subdivisions ▾</summary><div id="muteSubsPanel" style="position:absolute;right:0;margin-top:6px;z-index:100001;background:#0f172a;color:#c7d2fe;border:1px solid #1f2937;border-radius:8px;padding:10px 12px;min-width:180px;box-shadow:0 6px 20px rgba(0,0,0,.35);display:none;"><label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;user-select:none;"><input id="muteSubsApplyToCI" type="checkbox"/> Apply muting to count-in</label><div id="muteSubsTitle"></div><div id="muteSubsBoxes" style="display:flex;flex-wrap:nowrap;align-items:center;gap:10px;white-space:nowrap;overflow-x:auto;padding:4px 2px;"></div><div style="opacity:.75;font-size:.85em;margin-top:8px;">Uncheck sub-notes to silence them.</div><button id="muteSubsResetBtn" style="margin-top:10px;padding:4px 8px;border:1px solid #303643;border-radius:6px;background:#0f172a;color:#c7d2fe;cursor:pointer;">Reset muting</button></div></details></span>
-</div>
-<div class="section">
-<label for="mode">Mode:</label>
-<select id="mode">
-<option value="random">Random</option>
-<option value="uponly">Up only</option>
-<option value="downonly">Down only</option>
-</select>
-<!-- removed Bias Up button -->
-<input disabled="" id="biasSlider" max="100" min="-100" step="1" style="vertical-align:middle; width:240px;" type="range"/> <div id="biasValueRow" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;"><label for="biasNum" class="inline" style="margin-right:6px;font-size:1em;font-weight:500;vertical-align:middle;">Bias %:</label><input id="biasNum" max="100" min="-100" step="1" style="width:64px; margin-left:.5rem;" type="number"/></div>
-<div class="biasNote" style="display:block;text-align:center;font-size:0.9em;color:var(--text-muted,#aaa);margin-top:0.5rem;line-height:1.3;">Negative = more likely to go down. Positive = more likely to go up.</div>
-<label for="biasPct"></label>
-</div>
-<div class="section">
-<input id="countIn" type="checkbox"/>
-<label for="countIn">Use Count-In Beats</label>
-<label for="countInBeats">Count-In Beats:</label>
-<input class="n4" id="countInBeats" min="1" step="1" type="number" value="4"/>
-<input id="countInSubdivs" type="checkbox"/>
-<label for="countInSubdivs">Include Subdivisions in Count-In</label>
-</div>
-<div class="section" id="volumeSection">
-<input id="volume" max="100" min="0" step="1" type="range" value="50"/><label style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:0.9em;opacity:.9"><input checked="checked" id="liveVolPreview" type="checkbox"/> Live volume preview when stopped</label>
-<label for="volume">Volume:</label>
-<input id="volumeNum" max="100" min="0" step="1" style="width:64px; margin-left:.5rem;" type="number" value="\1"/>
-<label class="inline" style="margin-left:10px;">
-<input id="allowFullVolume" type="checkbox"/>
-      Allow full volume (louder clicks)
-    </label>
-</div>
-<div class="section" id="pulseSection">
-<label class="inline" for="showPulse">Show pulse dot</label>
-<input checked="" id="showPulse" type="checkbox"/>
-</div>
-<div class="section">
-<button id="startStop">Start</button>
-<span class="inline muted" id="status"></span>
-</div>
+
 <script>
-// Enforce: maxChange cannot be smaller than minChange
-(function(){
-  const $ = id => document.getElementById(id);
-  function snap(v, halves){ const step = halves?0.5:1; return Math.round(v/step)*step; }
-  function halves(){ return !!document.getElementById('halfBeats')?.checked; }
-  function fmt(v){ return snap(parseFloat(v||0), halves()).toFixed(halves()?1:0); }
-  function enforce() {
-    const minEl = $('minChange');
-    const maxEl = $('maxChange');
-    if(!minEl || !maxEl) return;
-    let minV = parseFloat(minEl.value||0);
-    let maxV = parseFloat(maxEl.value||0);
-    if (isNaN(minV)) minV = 0;
-    if (isNaN(maxV)) maxV = 0;
-    if (maxV < minV) {
-      maxV = minV;
-      maxEl.value = fmt(maxV);
-      // persist via existing saveSetting if available
-      try { if (typeof saveSetting === 'function') saveSetting('maxChange'); } catch(_){}
-    }
-  }
-  ['minChange','maxChange','halfBeats'].forEach(id=>{
-    const el = $(id);
-    if(!el) return;
-    el.addEventListener('input', enforce);
-    el.addEventListener('change', enforce);
+(() => {
+  // THEME
+  const root = document.body;
+  const themeSel = document.getElementById('theme');
+  const pulse = document.getElementById('pulse');
+  themeSel.addEventListener('change', () => { root.setAttribute('data-theme', themeSel.value); });
+  root.setAttribute('data-theme', themeSel.value);
+
+  // UI refs
+  const tempoNow = document.getElementById('tempoNow');
+  const statusEl = document.getElementById('status');
+  const startBtn = document.getElementById('startStop');
+  const startTempo = document.getElementById('startTempo');
+  const minTempo = document.getElementById('minTempo');
+  const maxTempo = document.getElementById('maxTempo');
+  const beatsPerTempo = document.getElementById('beatsPerTempo');
+  const repeatsPerTempo = document.getElementById('repeatsPerTempo');
+  const countInBeats = document.getElementById('countInBeats');
+  const subsPerBeat = document.getElementById('subsPerBeat');
+  const minStep = document.getElementById('minStep');
+  const maxStep = document.getElementById('maxStep');
+  const biasPct = document.getElementById('biasPct');
+  const volume = document.getElementById('volume');
+  const muteBtn = document.getElementById('muteBtn');
+  const muteMenu = document.getElementById('muteMenu');
+  const subList = document.getElementById('subList');
+  const subCountBadge = document.getElementById('subCountBadge');
+  const applyToCountIn = document.getElementById('applyToCountIn');
+  const resetMute = document.getElementById('resetMute');
+
+  // Popover
+  muteBtn.addEventListener('click', () => { muteMenu.classList.toggle('open'); buildSubList(); });
+  document.addEventListener('click', (e)=>{
+    if(!muteMenu.contains(e.target) && e.target!==muteBtn){ muteMenu.classList.remove('open'); }
   });
-  // Run once on load
-  window.addEventListener('DOMContentLoaded', enforce);
-})();
-</script>
-<script>
-(function(){
-  function setVolVars(){
-    var el = document.getElementById('volume');
-    if(!el) return;
-    var min = +el.min || 0;
-    var max = +el.max || 100;
-    var val = +el.value || 0;
-    el.style.setProperty('--volMin', String(min));
-    el.style.setProperty('--volMax', String(max));
-    el.style.setProperty('--volVal', String(val));
-  }
-  window.addEventListener('DOMContentLoaded', setVolVars);
-  window.addEventListener('load', setVolVars);
-  document.addEventListener('input', function(ev){
-    if(ev && ev.target && ev.target.id === 'volume'){ setVolVars(); }
-  }, true);
-  document.addEventListener('change', function(ev){
-    if(ev && ev.target && ev.target.id === 'volume'){ setVolVars(); }
-  }, true);
-})();
-</script>
-<script>
-(function(){
-  function setVolPct(){
-    var el = document.getElementById('volume');
-    if(!el) return;
-    var min = +el.min || 0, max = +el.max || 100, val = +el.value || 0;
-    var pct = (val - min) * 100 / (max - min);
-    if (!isFinite(pct)) pct = 0;
-    // Snap to 100 exactly at max to avoid subpixel gaps
-    if (val >= max) pct = 100;
-    el.style.setProperty('--volPct', pct);
-  }
-  window.addEventListener('DOMContentLoaded', setVolPct);
-  window.addEventListener('load', setVolPct);
-  var vol = document.getElementById('volume');
-  if (vol){
-    vol.addEventListener('input', setVolPct);
-    vol.addEventListener('change', setVolPct);
-  }
-})();
-</script>
-<script>
-(function(){
-  function setVolPct(){
-    var el = document.getElementById('volume');
-    if(!el) return;
-    var min = +el.min || 0, max = +el.max || 100, val = +el.value || 0;
-    var pct = (val - min) * 100 / (max - min);
-    if (!isFinite(pct)) pct = 0;
-    if (val >= max) pct = 100;  // lock to 100 so the fill hits the edge
-    el.style.setProperty('--volPct', pct);
-  }
-  window.addEventListener('DOMContentLoaded', setVolPct);
-  window.addEventListener('load', setVolPct);
-  var vol = document.getElementById('volume');
-  if (vol){
-    vol.addEventListener('input', setVolPct);
-    vol.addEventListener('change', setVolPct);
-  }
-})();
-</script>
-<script>
-(function(){
-  function $(id){ return document.getElementById(id); }
-  function gateBias(){
-    var modeEl = $("mode");
-    var pct = $("biasPct");
-    var btn = $("biasDirBtn");
-    if(!modeEl) return;
-    var disabled = (modeEl.value !== "random");
-    if (pct){ pct.disabled = disabled; pct.style.opacity = disabled ? ".5" : "1"; }
-    if (btn){ btn.disabled = disabled; btn.style.opacity = disabled ? ".5" : "1"; }
-    // If disabled, normalize bias to 0 so logic ignores any stored bias
-    if (disabled && pct){ pct.value = "0"; }
-  }
-  window.addEventListener("DOMContentLoaded", function(){
-    var modeEl = $("mode");
-    if (modeEl && !modeEl._biasGateBound){
-      modeEl.addEventListener("change", gateBias);
-      modeEl.addEventListener("input", gateBias);
-      modeEl._biasGateBound = true;
-    }
-    gateBias();
+  subsPerBeat.addEventListener('change', buildSubList);
+  resetMute.addEventListener('click', () => {
+    [...subList.querySelectorAll('input[type=checkbox]')].forEach(cb=>cb.checked=true);
   });
-  window.addEventListener("load", gateBias);
-})();
-</script>
-<script>
-(function(){
-  function clamp(v, min, max){ v = +v; if (isNaN(v)) return min; return Math.min(max, Math.max(min, v)); }
-  function bindVolumeBox(){
-    var slider = document.getElementById('volume');
-    var box    = document.getElementById('volumeNum');
-    if(!slider || !box) return;
-    // initialize
-    box.value = String(clamp(slider.value, 0, 100));
-    slider.addEventListener('input', function(){
-      box.value = String(clamp(slider.value, 0, 100));
-    });
-    slider.addEventListener('change', function(){
-      box.value = String(clamp(slider.value, 0, 100));
-    });
-    function applyFromBox(){
-      var v = clamp(box.value, 0, 100);
-      box.value = String(v);
-      slider.value = String(v);
-      // Fire input on slider so existing gain logic runs
-      slider.dispatchEvent(new Event('input', {bubbles:true}));
-      slider.dispatchEvent(new Event('change', {bubbles:true}));
-    }
-    box.addEventListener('input', applyFromBox);
-    box.addEventListener('change', applyFromBox);
-  }
-  window.addEventListener('DOMContentLoaded', bindVolumeBox);
-  window.addEventListener('load', bindVolumeBox);
-})();
-</script>
-<script>
-(function(){
-  function halfStep(){ var hb=document.getElementById('halfBeats'); return hb && hb.checked ? 0.5 : 1; }
-  function snapTempo(v){ var s=halfStep(); v=+v||0; return Math.round(v/s)*s; }
-  function fmt(v){ return (halfStep()===0.5) ? Number(v).toFixed(1) : String(Math.round(v)); }
 
-  function applyHalfBeatToInputs(){
-    var step = (halfStep()===0.5) ? 0.5 : 1;
-    ['startTempo','minTempo','maxTempo'].forEach(function(id){
-      var el = document.getElementById(id);
-      if(!el) return;
-      el.step = String(step);
-      var v = parseFloat(el.value);
-      if(!isNaN(v)){ el.value = fmt(snapTempo(v)); }
-    });
-  }
-  function resnapCurrentDisplay(){
-    var el = document.getElementById('currentTempoValue') || document.getElementById('currentTempo');
-    if(!el) return;
-    var num = parseFloat(el.textContent || el.innerText || '');
-    if(isNaN(num)) return;
-    var s = fmt(snapTempo(num));
-    if(el.textContent !== undefined) el.textContent = s; else el.innerText = s;
-  }
-
-  window.addEventListener('load', function(){
-    applyHalfBeatToInputs();
-    var hb = document.getElementById('halfBeats');
-    if(hb){
-      hb.addEventListener('change', function(){ applyHalfBeatToInputs(); resnapCurrentDisplay(); });
-      hb.addEventListener('input', function(){ applyHalfBeatToInputs(); resnapCurrentDisplay(); });
-    }
-    // snap when user edits boxes
-    ['startTempo','minTempo','maxTempo'].forEach(function(id){
-      var el = document.getElementById(id);
-      if(el){
-        function norm(){ el.value = fmt(snapTempo(el.value)); }
-        el.addEventListener('change', norm);
-        el.addEventListener('blur', norm);
-      }
-    });
-  });
-})();
-</script>
-<script>
-(function(){
-  function clamp(v, min, max){ v = +v; if (isNaN(v)) return 0; return Math.min(max, Math.max(min, v)); }
-  function $(id){ return document.getElementById(id); }
-
-  function updateBiasNumFromPct(){
-    var pct = $("biasPct");
-    var box = $("biasNum");
-    if(!pct || !box) return;
-    box.value = String(clamp(pct.value, -100, 100));
-  }
-
-  function updateBiasPctFromNum(){
-    var pct = $("biasPct");
-    var box = $("biasNum");
-    if(!pct || !box) return;
-    var v = clamp(box.value, -100, 100);
-    box.value = String(v);
-    pct.value = String(v);
-    // If your code saves bias automatically, trigger its events
-    pct.dispatchEvent(new Event('input', {bubbles:true}));
-    pct.dispatchEvent(new Event('change', {bubbles:true}));
-  }
-
-  function bindBiasSync(){
-    var pct = $("biasPct");
-    var box = $("biasNum");
-    var btn = $("biasDirBtn");
-    if (pct && box){
-      // initialize
-      updateBiasNumFromPct();
-      pct.addEventListener('input', updateBiasNumFromPct);
-      pct.addEventListener('change', updateBiasNumFromPct);
-      box.addEventListener('input', updateBiasPctFromNum);
-      box.addEventListener('change', updateBiasPctFromNum);
-    }
-    // If there is a bias up/down direction button, keep number in sync after clicks
-    if (btn){
-      btn.addEventListener('click', function(){ setTimeout(updateBiasNumFromPct, 0); });
+  function buildSubList(){
+    const n = Math.max(1, +subsPerBeat.value||1);
+    subCountBadge.textContent = n;
+    subList.innerHTML='';
+    for(let i=1;i<=n;i++){
+      const id='submute_'+i;
+      const li=document.createElement('label'); li.className='inline chip';
+      li.innerHTML=`<input type="checkbox" id="${id}" checked> <span>${i}</span>`;
+      subList.appendChild(li);
     }
   }
+  buildSubList();
 
-  // Extend the existing mode gate (if present) to include the number box
-  function extendGate(){
-    var modeEl = $("mode");
-    var pct = $("biasPct");
-    var btn = $("biasDirBtn");
-    var box = $("biasNum");
-    if(!modeEl) return;
-    var disabled = (modeEl.value !== "random");
-    if (box){
-      box.disabled = disabled;
-      if (disabled) { box.value = "0"; }
-    }
+  // AUDIO
+  let ctx, buffers={};
+  const AC = window.AudioContext || window.webkitAudioContext;
+  function ensureCtx(){ if(!ctx){ ctx = new AC(); } return ctx.resume(); }
+  function flash(kind){ pulse.style.background = kind==='ci'?'var(--gold)':kind==='beat'?'var(--accent)':'var(--ok)'; setTimeout(()=>pulse.style.background='#5a6578',85); }
+  function makeTone(hz, len=0.038, decay=38){
+    const sr=ctx.sampleRate, n=Math.floor(sr*len), buf=ctx.createBuffer(1,n,sr), ch=buf.getChannelData(0);
+    for(let i=0;i<n;i++){ const tt=i/sr; ch[i]=Math.sin(2*Math.PI*hz*tt)*Math.exp(-tt*decay); }
+    return buf;
+  }
+  async function loadBuffers(){
+    if(Object.keys(buffers).length) return;
+    await ensureCtx();
+    buffers.ci   = makeTone(1400,0.045,42);
+    buffers.beat = makeTone(950,0.040,40);
+    buffers.sub  = makeTone(620,0.036,36);
+  }
+  function play(bufName, when, gainMul=0.85){
+    const now = ctx.currentTime;
+    const src = ctx.createBufferSource(); src.buffer=buffers[bufName];
+    const g = ctx.createGain(); g.gain.value = (parseInt(volume.value,10)/100)*gainMul;
+    src.connect(g).connect(ctx.destination);
+    src.start(Math.max(when, now));
+  }
+  // live preview when stopped
+  let running=false;
+  volume.addEventListener('input', ()=>{ if(!running){ ensureCtx().then(loadBuffers).then(()=>{ play('beat', ctx.currentTime+0.02, 0.5); }); } });
+
+  // Deterministic scheduler
+  let loop=null;
+  function clampTempo(v){ const lo=+minTempo.value, hi=+maxTempo.value; return Math.min(hi, Math.max(lo, Math.round(v))); }
+  function stepSize(){
+    const min=+minStep.value, max=+maxStep.value, bias=+biasPct.value;
+    const pUp=Math.max(0,Math.min(1,0.5+bias/200));
+    const span=Math.max(0,max-min);
+    const size=min+Math.floor(Math.random()*(span+1));
+    return (Math.random()<pUp)? size : -size;
+  }
+  function mutedMask(n){
+    const cbs=[...subList.querySelectorAll('input[type=checkbox]')];
+    if(cbs.length!==n) return new Array(n).fill(true);
+    return cbs.map(cb=>cb.checked);
   }
 
-  window.addEventListener('DOMContentLoaded', function(){
-    bindBiasSync();
-    extendGate();
-    var modeEl = $("mode");
-    if (modeEl && !modeEl._biasNumGateBound){
-      modeEl.addEventListener('change', extendGate);
-      modeEl.addEventListener('input', extendGate);
-      modeEl._biasNumGateBound = true;
-    }
-  });
-  window.addEventListener('load', function(){
-    bindBiasSync();
-    extendGate();
-  });
-})();
-</script>
-<script>
-(function(){
-  try{
-    var pct = document.getElementById('biasPct');
-    var sl  = document.getElementById('biasSlider');
-    if (!pct || !sl) return;
-    function mirror(){ sl.value = String(pct.value || 0); }
-    mirror();
-    pct.addEventListener('input', mirror);
-    pct.addEventListener('change', mirror);
-    // Mode gating: keep it disabled always (display-only)
-  }catch(e){ /* do nothing */ }
-})();
-</script>
-<script>
-(function(){
-  try{
-    function $(id){ return document.getElementById(id); }
-    function clamp(v,min,max){ v = +v; if(isNaN(v)) return 0; return Math.min(max, Math.max(min, v)); }
-
-    var SYNCING = false; // prevents feedback loops
-
-    // Set all bias controls to the same value.
-    // opts.emit: if true, fire events on the primary control (pct) so existing logic reacts.
-    function setAllBias(val, opts){
-      var pct = $('biasPct');
-      var num = $('biasNum');      // may or may not exist
-      var sl  = $('biasSlider');   // exists
-      var v = clamp(val, -100, 100);
-      opts = opts || {emit:false};
-
-      SYNCING = true;
-      try{
-        if (pct && pct.value != String(v)) pct.value = String(v);
-        if (num && num.value != String(v)) num.value = String(v);
-        if (sl  && sl.value  != String(v)) sl.value  = String(v);
-      } finally {
-        SYNCING = false;
-      }
-      if (opts.emit && pct){
-        // Fire only one event to minimize risk; 'change' is usually sufficient for persistence
-        try { pct.dispatchEvent(new Event('change', {bubbles:true})); } catch(_e){}
-      }
-    }
-
-    function bind(){
-      var pct  = $('biasPct');
-      var num  = $('biasNum');
-      var sl   = $('biasSlider');
-      var mode = $('mode');
-      if (!pct || !sl) return;
-
-      // Initialize values from pct without emitting
-      setAllBias(pct.value, {emit:false});
-
-      // Slider drives bias when enabled
-      function onSlider(){
-        if (SYNCING) return;
-        if (sl.disabled) return;
-        setAllBias(sl.value, {emit:true});
-      }
-      sl.addEventListener('input', onSlider);
-      sl.addEventListener('change', onSlider);
-
-      // pct edits (from user or other logic) reflect without re-emitting
-      function onPct(){
-        if (SYNCING) return;
-        setAllBias(pct.value, {emit:false});
-      }
-      pct.addEventListener('input', onPct);
-      pct.addEventListener('change', onPct);
-
-      // number box (if present) should emit so bias persists like normal
-      if (num){
-        function onNum(){
-          if (SYNCING) return;
-          setAllBias(num.value, {emit:true});
-        }
-        num.addEventListener('input', onNum);
-        num.addEventListener('change', onNum);
-      }
-
-      // Gate enablement by mode
-      function gate(){
-        var disabled = (mode && mode.value !== 'random');
-        if (sl)  sl.disabled  = !!disabled;
-        if (num) num.disabled = !!disabled;
-        if (pct) pct.disabled = !!disabled;
-        if (disabled){
-          setAllBias(0, {emit:true});
-        } else {
-          setAllBias(pct.value, {emit:false});
-        }
-      }
-      if (mode){
-        mode.addEventListener('change', gate);
-        mode.addEventListener('input', gate);
-      }
-      gate();
-    }
-
-    if (document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', bind);
-    } else {
-      bind();
-    }
-  }catch(_e){ /* swallow any unexpected errors to avoid blank screen */ }
-})();
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-  var ranges = document.querySelectorAll('input[type="range"]');
-  for(var i=0;i<ranges.length;i++){
-    if(!ranges[i].classList.contains('air-range')) ranges[i].classList.add('air-range');
-  }
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-  var ids = ['biasSlider','volumeSlider','bias-range','volume-range'];
-  ids.forEach(function(id){
-    var el = document.getElementById(id);
-    if(el && el.type==='range') el.classList.add('air-slider');
-  });
-  // Fallback: tag any visible ranges that aren't already tagged.
-  var ranges = document.querySelectorAll('input[type="range"]');
-  ranges.forEach(function(r){ if(!r.classList.contains('air-slider')) r.classList.add('air-slider'); });
-});
-</script>
-<script>
-(function(){
-  function clamp(v,min,max){ return Math.min(max, Math.max(min, v)); }
-  function asNum(x, d){ var v = parseFloat(x); return isFinite(v)?v:d; }
-  function toPct(val, min, max, step){
-    var pct = (val - min) / (max - min || 1);
-    return clamp(pct*100, 0, 100);
-  }
-  function fromClientX(x, rect, min, max, step){
-    var pct = clamp((x - rect.left) / (rect.width || 1), 0, 1);
-    var raw = min + pct*(max-min);
-    if(step>0){
-      var q = Math.round((raw - min)/step);
-      raw = min + q*step;
-    }
-    // snap to 1 decimal if step is .5 etc.
-    var dp = (step && step<1) ? 1 : 0;
-    return parseFloat(raw.toFixed(dp));
-  }
-
-  function enhanceSlider(input){
-    if(input.dataset.airEnhanced==='1') return;
-    input.dataset.airEnhanced = '1';
-    // Wrap
-    var wrap = document.createElement('div');
-    wrap.className = 'air-skin';
-    var track = document.createElement('div'); track.className = 'air-track';
-    var thumb = document.createElement('div'); thumb.className = 'air-thumb';
-    // Insert wrapper and move input inside
-    input.parentNode.insertBefore(wrap, input);
-    wrap.appendChild(track);
-    wrap.appendChild(thumb);
-    input.classList.add('air-native');
-    wrap.appendChild(input);
-
-    function read(){
-      var min = asNum(input.min, 0);
-      var max = asNum(input.max, 100);
-      var step = asNum(input.step, 1);
-      var val = asNum(input.value, min);
-      return {min:min,max:max,step:step,val:val};
-    }
-    function render(){
-      var R = read();
-      wrap.classList.toggle('is-disabled', input.disabled);
-      var pct = toPct(R.val, R.min, R.max, R.step);
-      thumb.style.left = pct + '%';
-    }
-    function setVal(v, fire){
-      var R=read();
-      v = clamp(v, R.min, R.max);
-      if(R.step>0){ v = fromClientX((v-R.min)/(R.max-R.min||1), {left:0,width:1}, R.min, R.max, R.step); }
-      if(String(input.value) !== String(v)){
-        input.value = v;
-        if(fire){
-          var ev = new Event('input', {bubbles:true});
-          input.dispatchEvent(ev);
-        }
-      }
-      render();
-    }
-
-    // Pointer handling
-    var dragging=false;
-    function onDown(e){
-      if(input.disabled) return;
-      dragging=true; wrap.classList.add('is-focus');
-      var rect = wrap.getBoundingClientRect();
-      var R = read();
-      var v = fromClientX((e.clientX||e.touches?.[0]?.clientX||0), rect, R.min, R.max, R.step);
-      setVal(v, true);
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp, {once:true});
-      window.addEventListener('touchmove', onMove, {passive:false});
-      window.addEventListener('touchend', onUp, {once:true});
-      e.preventDefault();
-    }
-    function onMove(e){
-      if(!dragging) return;
-      var rect = wrap.getBoundingClientRect();
-      var R = read();
-      var clientX = e.clientX;
-      if(e.touches && e.touches[0]) clientX = e.touches[0].clientX;
-      var v = fromClientX(clientX, rect, R.min, R.max, R.step);
-      setVal(v, true);
-      e.preventDefault();
-    }
-    function onUp(e){
-      dragging=false; wrap.classList.remove('is-focus');
-      var ev = new Event('change',{bubbles:true}); input.dispatchEvent(ev);
-    }
-
-    wrap.addEventListener('pointerdown', onDown);
-    wrap.addEventListener('touchstart', onDown, {passive:false});
-
-    // Reflect external changes
-    input.addEventListener('input', render);
-    input.addEventListener('change', render);
-
-    // Initial
-    render();
-  }
-
-  document.addEventListener('DOMContentLoaded', function(){
-    document.querySelectorAll('input[type="range"]').forEach(enhanceSlider);
-    // Re-enhance if the app injects sliders later
-    const obs = new MutationObserver(function(muts){
-      muts.forEach(function(m){
-        m.addedNodes && m.addedNodes.forEach(function(n){
-          if(n.nodeType===1){
-            if(n.matches && n.matches('input[type="range"]')) enhanceSlider(n);
-            n.querySelectorAll && n.querySelectorAll('input[type="range"]').forEach(enhanceSlider);
-          }
-        });
-      });
-    });
-    obs.observe(document.documentElement, {childList:true, subtree:true});
-  });
-})();
-</script>
-<script>
-(function(){
-  const $ = id => document.getElementById(id);
-  const setText = (id, s) => { const el=$(id); if(el) el.textContent = s; };
-  const clamp = (v,min,max)=>Math.min(max,Math.max(min,+v||0));
-  const stepSnap = () => ($('halfBeats') && $('halfBeats').checked) ? 0.5 : 1;
-  const snap = v => { const st=stepSnap(); return Math.round((+v||0)/st)*st; };
-  const fmt = v => { const st=stepSnap(); return snap(v).toFixed(st===0.5?1:0); };
-
-  function readRange(){
-    const minEl=$('minTempo'), maxEl=$('maxTempo'), startEl=$('startTempo');
-    let minT=clamp(minEl?.value||40,10,300);
-    let maxT=clamp(maxEl?.value||120,10,300);
-    if(minT>maxT){ maxT=minT; if(maxEl) maxEl.value=fmt(maxT); }
-    if(minEl) minEl.max=String(maxT);
-    if(maxEl) maxEl.min=String(minT);
-    if(startEl){
-      const st = snap(clamp(startEl.value,minT,maxT));
-      if(startEl.value!=String(st)) startEl.value = fmt(st);
-    }
-    return {minT,maxT,startT:+(startEl?.value||60)};
-  }
-
-  // Embedded base64 samples (distinct run vs count-in)
-  const RUN_B64 = "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";
-  const COUNTIN_B64 = "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";
-
-  // Audio
-  let audioCtx=null, masterGain=null, liveGain=null, runBuf=null, ciBuf=null;
-  let running=false, nextNoteTime=0, lookahead=0.008, scheduleAheadTime=0.15;
-  let tempo=60, subInBeat=0, beatIndex=0, phase='run', countInLeft=0;
-  let biasSign=1;
-
-  const pulse = (t)=>{
-    const dot = document.getElementById('pulseDot'); const show=document.getElementById('showPulse');
-    if(!dot || (show && !show.checked)) return;
-    const delay = Math.max(0, (t - audioCtx.currentTime)*1000);
-    setTimeout(()=>{ dot.classList.remove('__boom'); void dot.offsetWidth; dot.classList.add('__boom'); }, delay);
-  };
-
-  function semisToRate(semi){ return Math.pow(2,(semi||0)/12); }
-  function dbToLinear(db){ return Math.pow(10, db/20); }
-  function msToSamples(ms,sr){ return Math.max(0, Math.round((ms||0)*sr/1000)); }
-  function base64ToArrayBuffer(b64){
-    const clean=(b64||'').replace(/[^A-Za-z0-9+/=]/g,'');
-    const bin=atob(clean); const out=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i);
-    return out.buffer;
-  }
-  function decodeAudioDataCompat(ctx, ab){
-    return new Promise((resolve,reject)=>{
-      try{
-        const maybe = ctx.decodeAudioData(ab, b=>resolve(b), e=>reject(e));
-        if(maybe && typeof maybe.then==='function') maybe.then(resolve).catch(reject);
-      }catch(e){ reject(e); }
-    });
-  }
-  function autoTrim(ctx, buffer, thresholdDb, prePadMs, postPadMs){
-    const sr=buffer.sampleRate, ch=buffer.numberOfChannels, N=buffer.length;
-    const thr=dbToLinear(thresholdDb);
-    let start=0, end=N-1;
-    outerS: for(let i=0;i<N;i++){ for(let c=0;c<ch;c++){ if(Math.abs(buffer.getChannelData(c)[i])>=thr){ start=i; break outerS; } } }
-    outerE: for(let i=N-1;i>=0;i--){ for(let c=0;c<ch;c++){ if(Math.abs(buffer.getChannelData(c)[i])>=thr){ end=i; break outerE; } } }
-    start=Math.max(0, start - msToSamples(prePadMs,sr));
-    end=Math.min(N-1, end + msToSamples(postPadMs,sr));
-    const len=Math.max(1, end-start+1);
-    const out=ctx.createBuffer(ch, len, sr);
-    for(let c=0;c<ch;c++){ out.getChannelData(c).set(buffer.getChannelData(c).subarray(start,start+len)); }
-    return out;
-  }
-
-  const SETTINGS = {
-    run: { mode:'timbrevol', beatVol:1.00, subVol:0.72, accentSemi:5, subSemi:2, accentHpf:1880, subLpf:3400 },
-    ci:  { mode:'timbrevol', beatVol:1.00, subVol:0.67, accentSemi:6, subSemi:4, accentHpf:2150, subLpf:3000 }
-  };
-  
-  function updateLiveGainImmediate(){
-    if(!liveGain || !audioCtx) return;
-    const target = currentGainScalar();
-    try{ liveGain.gain.cancelScheduledValues(0); }catch(e){}
-    // Direct set so increases/decreases are instantaneous
-    liveGain.gain.value = target;
-  }
-
-
-  // --- Live volume rAF polling (immediate, event-agnostic) ---
-  let __lastVol = -1;
-  function __readVol(){ return currentGainScalar(); }
-  function __applyLiveVol(v){
-    if(!liveGain || !audioCtx) return;
-    try{ liveGain.gain.cancelScheduledValues(0); }catch(e){}
-    liveGain.gain.value = v;
-    try{ liveGain.gain.setValueAtTime(v, audioCtx.currentTime); }catch(e){}
-  }
-  function __volLoop(){
-    try{
-      const v = __readVol();
-      if(v !== __lastVol){
-        __lastVol = v;
-        __applyLiveVol(v);
-      }
-    }catch(e){}
-    requestAnimationFrame(__volLoop);
-  }
-
-function currentGainScalar(){
-    const v = +($('volume')?.value||60);
-    const allow = !!$('allowFullVolume')?.checked;
-    const base = Math.min(1, Math.max(0, v/100));
-    const boost = allow ? 1.6 : 1.0;
-    return Math.min(2.0, base*boost);
-  }
-  function makeChain(which, buffer, isAccent){
-    const cfg = SETTINGS[which];
-    const src = audioCtx.createBufferSource(); src.buffer = buffer;
-    const g = audioCtx.createGain();
-    let rate=1.0, tail=src;
-    if(cfg.mode==='timbrevol'){
-      rate = isAccent ? semisToRate(cfg.accentSemi) : semisToRate(-cfg.subSemi);
-      src.playbackRate.value = rate;
-      const filt = audioCtx.createBiquadFilter();
-      if(isAccent){ filt.type='highpass'; filt.frequency.value=cfg.accentHpf; }
-      else        { filt.type='lowpass';  filt.frequency.value=cfg.subLpf; }
-      tail.connect(filt); tail=filt;
-      g.gain.value = currentGainScalar() * (isAccent?cfg.beatVol:cfg.subVol);
-    }else{
-      g.gain.value = currentGainScalar();
-    }
-    tail.connect(g).connect(masterGain);
-    return {src, rate};
-  }
-  function scheduleRunClick(atTime, isAccent){
-    if(!runBuf) return;
-    const chain = makeChain('run', runBuf, isAccent);
-    chain.src.start(atTime);
-    pulse(atTime);
-  }
-  function scheduleCountInClick(atTime, isAccent){
-    if(!ciBuf) return;
-    const chain = makeChain('ci', ciBuf, isAccent);
-    chain.src.start(atTime);
-    pulse(atTime);
-  }
-
-  function scheduleAhead(){
-      const beatDur = 60/Math.max(tempo, 10);
-      scheduleAheadTime = Math.min(0.18, Math.max(0.06, 1.2*beatDur));
-    }
-
-  let tempoDisplayTimer=null;
-  function scheduleTempoDisplay(atTime, newTempo){
-    if(tempoDisplayTimer){ clearTimeout(tempoDisplayTimer); tempoDisplayTimer=null; }
-    const delay = Math.max(0, (atTime - audioCtx.currentTime)*1000);
-    tempoDisplayTimer = setTimeout(()=>{ setText('currentTempo', fmt(newTempo)); tempoDisplayTimer=null; }, delay);
-  }
-
-  function readSubdiv(){ return Math.max(1, parseInt(($('subdivision')?.value)||1,10)); }
-  function readBeatsPerTempo(){ return Math.max(1, parseInt(($('beatsPerTempo')?.value)||4,10)); }
-
-  function chooseNextTempo(curr){
-    const r = readRange();
-    const minC = Math.max(0, +($('minChange')?.value||1));
-    const maxC = Math.max(minC, +($('maxChange')?.value||5));
-    const mode = ($('mode')?.value)||'random';
-    const biasPct = Math.max(0, Math.min(100, +($('biasPct')?.value||0)));
-    let dir=0;
-    if(mode==='uponly') dir=1; else if(mode==='downonly') dir=-1;
-    else { const pUp = Math.max(0, Math.min(1, (biasPct*biasSign + 100)/200)); dir = (Math.random()<pUp)?1:-1; }
-    let target = curr + (minC + Math.random()*(maxC-minC))*dir;
-    if(target>r.maxT){ target = r.maxT - (target-r.maxT); }
-    if(target<r.minT){ target = r.minT + (r.minT-target); }
-    target = snap(target);
-    return Math.min(r.maxT, Math.max(r.minT, target));
-  }
-
-  function scheduler(){
-    if(!running) return;
-    const ct = audioCtx.currentTime;
-    scheduleAhead();
-    const subdiv = readSubdiv();
-    let unit = (60/tempo)/subdiv;
-    const bpt = readBeatsPerTempo();
-
-    while(nextNoteTime < ct + scheduleAheadTime){
-      if(phase==='run'){
-        const isAccent = (subInBeat===0);
-        const __ms = (window.__mutedSubs && window.__mutedSubs.has) ? window.__mutedSubs : null;
-        const __muted = __ms ? __ms.has(subInBeat) : false;
-        if(!__muted) scheduleRunClick(nextNoteTime, isAccent);
-        subInBeat++; nextNoteTime += unit;
-        if(subInBeat>=subdiv){
-          subInBeat=0;
-          beatIndex=(beatIndex+1)%bpt;
-          if(beatIndex===0){
-            if($('countIn') && $('countIn').checked){
-              phase='countin';
-              countInLeft = Math.max(1, parseInt(($('countInBeats')?.value)||4,10));
-            }else{
-              const nt = chooseNextTempo(tempo);
-              scheduleTempoDisplay(nextNoteTime, nt);
-              tempo = nt; unit = (60/tempo)/subdiv;
-            }
-          }
-        }
-      }else{
-        const withSubs = !!($('countInSubdivs') && $('countInSubdivs').checked);
-        const ciSubDiv = withSubs ? subdiv : 1;
-        const ciUnit = (60/tempo)/ciSubDiv;
-        const isAccentCI = (subInBeat===0);
-        const __msCI = (window.__mutedSubs && window.__mutedSubs.has) ? window.__mutedSubs : null;
-        const __mutedCI = withSubs && (typeof window.__muteCIEnabled==='function' && window.__muteCIEnabled()) && __msCI ? __msCI.has(subInBeat) : false;
-        if(!__mutedCI) scheduleCountInClick(nextNoteTime, isAccentCI);
-        subInBeat++; nextNoteTime += ciUnit;
-        if(subInBeat>=ciSubDiv){
-          subInBeat=0;
-          if(--countInLeft<=0){
-            const nt2 = chooseNextTempo(tempo);
-            scheduleTempoDisplay(nextNoteTime, nt2);
-            tempo=nt2; phase='run'; beatIndex=0;
-          }
-        }
-      }
-    }
-    setTimeout(scheduler, lookahead*1000);
-  }
-
-  async function ensureAudio(){
-    if(!audioCtx){
-      audioCtx = new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
-      masterGain = audioCtx.createGain();
-      liveGain  = audioCtx.createGain();
-      masterGain.connect(liveGain).connect(audioCtx.destination);
-      liveGain.gain.value = 1.0;
-      try{ window._airAudioCtx = audioCtx; }catch(e){}
-    }
-    if(audioCtx.state==='suspended'){ try{ await audioCtx.resume(); }catch{} }
-    if(!runBuf){
-      const br = await decodeAudioDataCompat(audioCtx, base64ToArrayBuffer(RUN_B64));
-      runBuf = autoTrim(audioCtx, br, -40, 0.2, 0.4);
-    }
-    if(!ciBuf){
-      const bc = await decodeAudioDataCompat(audioCtx, base64ToArrayBuffer(COUNTIN_B64));
-      ciBuf = autoTrim(audioCtx, bc, -40, 0.2, 0.4);
-    }
-  }
-
-  async function start(){
+  function start(){
     if(running) return;
-    try{
-      await ensureAudio();
-      const r = readRange();
-      tempo = clamp(snap(($('startTempo')?.value)||r.startT), r.minT, r.maxT);
-      setText('currentTempo', fmt(tempo));
-      subInBeat=0; beatIndex=0; phase = ($('countIn') && $('countIn').checked) ? 'countin' : 'run';
-      countInLeft = Math.max(1, parseInt(($('countInBeats')?.value)||4,10));
-      nextNoteTime = audioCtx.currentTime + 0.05;
-      running = true;
-      if($('startStop')) $('startStop').textContent='Stop';
-      if($('status')) $('status').textContent='Running';
-      scheduler();
-    }catch(e){
-      if($('status')) $('status').textContent='Start error: '+e;
-    }
+    running=true;
+    ensureCtx().then(loadBuffers).then(()=>{
+      // state vars
+      let tempo = clampTempo(+startTempo.value||60);
+      let bpt   = Math.max(1, +beatsPerTempo.value||4);
+      let rptN  = Math.max(1, +repeatsPerTempo.value||1);
+      let sub   = Math.max(1, +subsPerBeat.value||1);
+      let ciN   = Math.max(0, +countInBeats.value||0);
+      let mask  = mutedMask(sub);
+      let includeMuteInCI = applyToCountIn.checked;
+
+      let beatInterval = 60/tempo;
+      let subInterval  = beatInterval/sub;
+      let next = ctx.currentTime + 0.12;
+
+      let state='countin';
+      let ciLeft=ciN;
+      let beatIdx=0;
+      let subSlot = 0; // 0..sub-1 (0 = main beat slot)
+      let repsDone=0;
+      let pendingTempo=false;
+
+      tempoNow.textContent = tempo;
+      statusEl.textContent = 'Running';
+      startBtn.textContent = 'Stop';
+
+      function refresh(){
+        beatInterval = 60/tempo;
+        subInterval  = beatInterval/sub;
+      }
+
+      function tempoAdvance(){
+        const delta = stepSize();
+        tempo = clampTempo(tempo + delta);
+        tempoNow.textContent = tempo;
+        // re-read dynamic form values
+        bpt  = Math.max(1, +beatsPerTempo.value||4);
+        rptN = Math.max(1, +repeatsPerTempo.value||1);
+        sub  = Math.max(1, +subsPerBeat.value||1);
+        ciN  = Math.max(0, +countInBeats.value||0);
+        mask = mutedMask(sub);
+        includeMuteInCI = applyToCountIn.checked;
+        refresh();
+      }
+
+      const lookahead=0.12;
+      function tick(){
+        while(next < ctx.currentTime + lookahead){
+          if(state==='countin'){
+            if(ciLeft>0){
+              // apply muting for count-in only if opted-in; otherwise play just the main click
+              play('ci', next, 0.95); flash('ci');
+              // (If we ever want subdivided count-in, we'd schedule sub clicks here honoring mask. For now: main beats only.)
+              ciLeft--; next += beatInterval; continue;
+            }
+            // start a fresh cycle
+            beatIdx=0;
+            subSlot=0;
+            state='beats';
+            continue;
+          }
+
+          // beats state
+          if(subSlot===0){
+            if(pendingTempo){ tempoAdvance(); pendingTempo=false; }
+            refresh(); // lock intervals for this beat
+            play('beat', next, 0.85); flash('beat');
+            subSlot=1;
+            next += subInterval; continue;
+          }
+          if(subSlot < sub){
+            if(mask[subSlot]){ play('sub', next, 0.55); flash('sub'); }
+            subSlot++;
+            next += subInterval;
+            if(subSlot < sub) continue;
+          }
+          // beat finished
+          beatIdx++;
+          if(beatIdx < bpt){ subSlot=0; continue; }
+
+          // cycle finished
+          repsDone++;
+          if(repsDone >= rptN){ repsDone=0; pendingTempo=true; }
+          ciLeft=ciN;
+          state='countin';
+        }
+      }
+
+      refresh();
+      loop && clearInterval(loop);
+      loop=setInterval(tick, 25);
+    });
   }
+
   function stop(){
     running=false;
-    if($('startStop')) $('startStop').textContent='Start';
-    if($('status')) $('status').textContent='';
+    loop && clearInterval(loop); loop=null;
+    statusEl.textContent='Stopped';
+    startBtn.textContent='Start';
   }
 
-  // Re-bind the Start/Stop to ensure our single engine controls playback
-  window.addEventListener('DOMContentLoaded', ()=>{
-    // start live volume polling loop
-    __volLoop();
-    const volEl=$('volume'); const fullEl=$('allowFullVolume');
-    const isRunning = ()=>{ const st = $('status')?.textContent||''; return /running/i.test(st); };
-    function onVolChange(){ updateLiveGainImmediate(); }
-    if(volEl){ ['input','change'].forEach(ev=> volEl.addEventListener(ev, onVolChange)); }
-    if(fullEl){ ['input','change'].forEach(ev=> fullEl.addEventListener(ev, onVolChange)); }
-    // Initialize live gain on load
-    updateLiveGainImmediate();
-    // Live guard on range
-    ['minTempo','maxTempo','startTempo','halfBeats'].forEach(id=>{
-      const el=$(id); if(!el) return;
-      ['input','change','blur'].forEach(ev=> el.addEventListener(ev, readRange));
-    });
-    readRange();
-
-    const btn=$('startStop');
-    if(btn){
-      const clone=btn.cloneNode(true);
-      btn.parentNode.replaceChild(clone, btn);
-      clone.id='startStop';
-      clone.addEventListener('click', ()=> running?stop():start());
-    }
-    // Space toggles
-    window.addEventListener('keydown', e=>{ if(e.code==='Space'){ e.preventDefault(); running?stop():start(); }});
-
-    // Mobile/touch resume
-    window.addEventListener('touchstart', ()=>{ if(audioCtx && audioCtx.state==='suspended'){ audioCtx.resume(); } }, {passive:true});
-  });
-})();
-</script>
-<script>
-(function(){
-  const $=id=>document.getElementById(id);
-  let audioCtxRef=null; // reuse engine context if present
-  let previewOsc=null, previewGain=null, previewTimer=null;
-
-  function getAudioCtx(){
-    try{
-      // Try existing engine context (if exposed); else create a lightweight one
-      if(window._airAudioCtx) return window._airAudioCtx;
-    }catch(e){}
-    if(!audioCtxRef){
-      audioCtxRef = new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
-    }
-    return audioCtxRef;
-  }
-
-  function currVolumeScalar(){
-    const vol = +($('volume')?.value||60);
-    const allow = !!$('allowFullVolume')?.checked;
-    const base = Math.min(1, Math.max(0, vol/100));
-    const boost = allow ? 1.6 : 1.0;
-    return Math.min(2.0, base*boost);
-  }
-
-  function isRunning(){
-    // Look for a status text we set when engine runs, or presence of a scheduler flag if exposed
-    const st = $('status')?.textContent||'';
-    return /running/i.test(st);
-  }
-
-  function startPreview(){
-    const ctx = getAudioCtx();
-    if(!ctx) return;
-    if(ctx.state==='suspended'){ ctx.resume().catch(()=>{}); }
-    if(!previewGain){
-      previewGain = ctx.createGain();
-      previewGain.gain.value = 0;
-      previewGain.connect(ctx.destination);
-    }
-    if(!previewOsc){
-      previewOsc = ctx.createOscillator();
-      previewOsc.type = 'sine';
-      previewOsc.frequency.value = 880; // A5 small, unobtrusive
-      previewOsc.connect(previewGain);
-      try{ previewOsc.start(); }catch(e){ /* already started */ }
-    }
-    // bring up to current volume quickly
-    const v = currVolumeScalar();
-    const now = ctx.currentTime;
-    try{ previewGain.gain.cancelScheduledValues(now); }catch(e){}
-    previewGain.gain.setValueAtTime(previewGain.gain.value, now);
-    previewGain.gain.linearRampToValueAtTime(Math.min(0.4, v*0.3), now + 0.01);
-  }
-
-  function stopPreviewSoon(){
-    const ctx = getAudioCtx();
-    if(!ctx || !previewGain) return;
-    if(previewTimer) clearTimeout(previewTimer);
-    previewTimer = setTimeout(()=>{
-      const now = ctx.currentTime;
-      try{ previewGain.gain.cancelScheduledValues(now); }catch(e){}
-      previewGain.gain.linearRampToValueAtTime(0.0, now + 0.03);
-    }, 120); // fade out shortly after last movement
-  }
-
-  function onVolumeInput(){
-    // If running or preview disabled, do nothing (engine will pick up next tick)
-    if(isRunning() || !($('liveVolPreview') && $('liveVolPreview').checked)) return;
-    startPreview();
-    stopPreviewSoon();
-  }
-
-  window.addEventListener('DOMContentLoaded', function(){
-    const vol = $('volume');
-    if(vol){ ['input','change'].forEach(ev=> vol.addEventListener(ev, onVolumeInput)); }
-    // If engine exposes context, store for reuse
-    try{
-      if(window.AudioContext && !window._airAudioCtx){
-        // noop; engine likely creates its own on start
-      }
-    }catch(e){}
-  });
-})();
-</script>
-<script>
-(function(){
-  const $ = id => document.getElementById(id);
-  const mutedSubs = new Set(); // 0-based
-
-  function subdivisionCount(){
-    const sel = $('subdivision'); if(!sel) return 1;
-    // Try numeric value
-    let n = Number(sel.value);
-    if(Number.isFinite(n) && n>=1) return n;
-    // Try data-n on selected option
-    const opt = sel.options && sel.options[sel.selectedIndex];
-    const dataN = opt?.dataset?.n || opt?.getAttribute('data-n') || opt?.getAttribute('data-count');
-    n = Number(dataN);
-    if(Number.isFinite(n) && n>=1) return n;
-    // Map common labels
-    const label = (opt?.textContent || '').toLowerCase();
-    if(/quarter/.test(label)) return 1;
-    if(/eighth/.test(label)) return 2;
-    if(/triplet/.test(label)) return 3;
-    if(/sixteenth/.test(label)) return 4;
-    if(/quintuplet/.test(label)) return 5;
-    if(/sextuplet/.test(label)) return 6;
-    return 1;
-  }
-
-  function buildMuteUI(){
-    const boxes = $('muteSubsBoxes'), title = $('muteSubsTitle');
-    if(!boxes || !title) return;
-    boxes.innerHTML='';
-    const N = subdivisionCount();
-    title.textContent = 'Subdivisions: ' + N;
-    [...mutedSubs].forEach(i=>{ if(i>=N) mutedSubs.delete(i); });
-    for(let i=0;i<N;i++){
-      const lab = document.createElement('label');
-      lab.style.cssText='display:flex;align-items:center;gap:6px;user-select:none;';
-      const cb = document.createElement('input');
-      cb.type='checkbox'; cb.checked = !mutedSubs.has(i);
-      cb.addEventListener('change', ()=>{ if(cb.checked) mutedSubs.delete(i); else mutedSubs.add(i); });
-      const txt = document.createElement('span'); txt.textContent = String(i+1);
-      lab.append(cb, txt);
-      boxes.appendChild(lab);
-    }
-  }
-
-  function closeOnOutside(){
-    const det = $('muteSubsDetails');
-    if(!det) return;
-    document.addEventListener('click', (e)=>{
-      if(det.open && !det.contains(e.target)) det.open = false;
-    });
-  }
-
-  // Patch schedule functions when available; retry until present
-  function patchOnce(){
-    const g = window;
-    if(g.__mutePatched) return true;
-    const have = (typeof g.scheduleRunClick === 'function') && (typeof g.scheduleCountInClick === 'function');
-    if(!have) return false;
-    const origRun = g.scheduleRunClick;
-    const origCI  = g.scheduleCountInClick;
-    g.scheduleRunClick = function(time, isAccent, subIndex){
-      let idx = (typeof subIndex === 'number') ? subIndex : (isAccent ? 0 : 1);
-      if(mutedSubs.has(idx)) return;
-      return origRun.apply(this, arguments);
-    };
-    g.scheduleCountInClick = function(time, isAccent, subIndex){
-      let idx = (typeof subIndex === 'number') ? subIndex : (isAccent ? 0 : 1);
-      const withSubs = !!document.querySelector('#countInWithSubs:checked');
-      if(withSubs && mutedSubs.has(idx)) return;
-      return origCI.apply(this, arguments);
-    };
-    g.__mutePatched = true;
-    return true;
-  }
-
-  function ensurePatched(){
-    if(patchOnce()) return;
-    let tries = 0;
-    const id = setInterval(()=>{
-      tries++;
-      if(patchOnce() || tries>60){ clearInterval(id); }
-    }, 250);
-  }
-
-  function init(){
-    buildMuteUI();
-    const sub = $('subdivision');
-    if(sub){ ['change','input'].forEach(ev=> sub.addEventListener(ev, buildMuteUI)); }
-    closeOnOutside();
-    ensurePatched();
-  }
-  window.addEventListener('DOMContentLoaded', init);
-})();
-</script>
-<script>
-(function(){
-  function ensureMuteOpenWorks(){
-    var det = document.getElementById('muteSubsDetails');
-    if(!det) return;
-    var sum = det.querySelector('summary');
-    if(!sum) return;
-    if(sum.__muteBound) return;
-    sum.__muteBound = true;
-    sum.addEventListener('click', function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      det.open = !det.open;
-      // trigger layout update for some browsers
-      var p = document.getElementById('muteSubsPanel'); if(p){ p.style.display = det.open ? 'block' : 'none'; }
-    });
-    // close on outside click
-    document.addEventListener('click', function(ev){
-      if(det.open && !det.contains(ev.target)){
-        det.open = false;
-        var p = document.getElementById('muteSubsPanel'); if(p){ p.style.display = 'none'; }
-      }
-    });
-  }
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', ensureMuteOpenWorks);
-  }else{
-    ensureMuteOpenWorks();
-  }
-})();
-</script>
-<script>
-(function(){
-  const $ = id => document.getElementById(id);
-  // Global muted set consulted by scheduler
-  if(!window.__mutedSubs) window.__mutedSubs = new Set();
-
-  function subdivisionCount(){
-    const sel = $('subdivision'); if(!sel) return 1;
-    let n = Number(sel.value);
-    if(Number.isFinite(n) && n>=1) return n;
-    const opt = sel.options && sel.options[sel.selectedIndex];
-    const d = opt?.dataset?.n || opt?.getAttribute('data-n') || opt?.getAttribute('data-count');
-    n = Number(d);
-    if(Number.isFinite(n) && n>=1) return n;
-    const label = (opt?.textContent||'').toLowerCase();
-    if(/quarter/.test(label)) return 1;
-    if(/eighth/.test(label)) return 2;
-    if(/triplet/.test(label)) return 3;
-    if(/sixteenth/.test(label)) return 4;
-    if(/quintuplet/.test(label)) return 5;
-    if(/sextuplet/.test(label)) return 6;
-    return 1;
-  }
-
-  function syncFromUI(){
-    const boxes = document.querySelectorAll('#muteSubsBoxes input[type="checkbox"]');
-    if(!boxes.length){ return; }
-    const N = subdivisionCount();
-    // Build muted set from unchecked boxes
-    const muted = new Set();
-    boxes.forEach((cb, idx)=>{ if(idx < N && !cb.checked) muted.add(idx); });
-    // replace contents atomically
-    window.__mutedSubs.clear();
-    muted.forEach(i=> window.__mutedSubs.add(i));
-  }
-
-  function bindBoxEvents(){
-    const boxes = document.querySelectorAll('#muteSubsBoxes input[type="checkbox"]');
-    boxes.forEach(cb => {
-      if(cb.__muteBound) return;
-      cb.__muteBound = true;
-      cb.addEventListener('change', syncFromUI);
-    });
-  }
-
-  function watchUI(){
-    // Observe changes under the panel so when the UI rebuilds, we re-bind
-    const panel = document.getElementById('muteSubsDetails') || document.body;
-    const mo = new MutationObserver(()=>{ bindBoxEvents(); syncFromUI(); });
-    mo.observe(panel, { childList:true, subtree:true });
-  }
-
-  function init(){
-    bindBoxEvents();
-    syncFromUI();
-    watchUI();
-    // Also resync periodically as a fallback
-    setInterval(syncFromUI, 500);
-    const sub = $('subdivision');
-    if(sub){ ['change','input'].forEach(ev=> sub.addEventListener(ev, ()=>{ setTimeout(syncFromUI, 0); })); }
-  }
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', init);
-  }else{
-    init();
-  }
-})();
-</script>
-<script>
-(function(){
-  function resetMuteOnSubdivisionChange(){
-    var sub = document.getElementById('subdivision');
-    if(!sub) return;
-    function resetAll(){
-      var boxes = document.querySelectorAll('#muteSubsBoxes input[type="checkbox"]');
-      boxes.forEach(function(cb){ cb.checked = true; });
-      if(window.__mutedSubs){ window.__mutedSubs.clear(); }
-      // Trigger any sync function from previous patch if present
-      if(typeof window.dispatchEvent === 'function'){
-        try{ window.dispatchEvent(new Event('air-mute-sync')); }catch(e){}
-      }
-    }
-    ['change','input'].forEach(function(ev){
-      sub.addEventListener(ev, function(){ setTimeout(resetAll, 0); });
-    });
-  }
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', resetMuteOnSubdivisionChange);
-  }else{
-    resetMuteOnSubdivisionChange();
-  }
-})();
-</script>
-<script>
-(function(){
-  function __muteCIEnabled(){
-    var el = document.getElementById('muteSubsApplyToCI');
-    return !!(el && el.checked);
-  }
-  try{ window.__muteCIEnabled = __muteCIEnabled; }catch(e){}
-})();
-</script>
-<script>
-(function(){
-  function bindMuteReset(){
-    var btn = document.getElementById('muteSubsResetBtn');
-    if(!btn || btn.__bound) return;
-    btn.__bound = true;
-    btn.addEventListener('click', function(e){
-      e.preventDefault();
-      var boxes = document.querySelectorAll('#muteSubsBoxes input[type="checkbox"]');
-      boxes.forEach(function(cb){ cb.checked = true; });
-      if(window.__mutedSubs && window.__mutedSubs.clear) window.__mutedSubs.clear();
-      // if any sync function is present from earlier patches, trigger it
-      try { window.dispatchEvent(new Event('air-mute-sync')); } catch(e){}
-    });
-  }
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', bindMuteReset);
-  }else{
-    bindMuteReset();
-  }
-})();
-</script>
-<script>
-(function(){
-  var sl = document.getElementById('biasSlider');
-  if(!sl) return;
-
-  // Ensure slider is a working range control
-  try { sl.type = 'range'; } catch(_) {}
-  sl.min = (sl.min !== undefined && sl.min !== '') ? sl.min : '-100';
-  sl.max = (sl.max !== undefined && sl.max !== '') ? sl.max : '100';
-  sl.step = (sl.step !== undefined && sl.step !== '') ? sl.step : '1';
-  sl.disabled = false;
-
-  // Locate numeric input shown below the slider
-  function findNumeric(){
-    var n = sl;
-    for (var i=0; i<50 && n; i++){
-      n = n.nextElementSibling || (n.parentElement && n.parentElement.nextElementSibling);
-      if(!n) break;
-      if (n.tagName === 'INPUT' && n.type === 'number') return n;
-      if (n.querySelector){
-        var q = n.querySelector('input[type="number"]');
-        if(q) return q;
-      }
-    }
-    return null;
-  }
-  var num = findNumeric();
-  if(!num){
-    // Fallback: create one if missing
-    num = document.createElement('input');
-    num.type = 'number';
-    num.style.cssText = 'width:64px;margin-left:.5rem;';
-    sl.parentElement.appendChild(num);
-  }
-
-  // Two-way binding & clamping
-  function clamp(v){ v = +v||0; if(v>100) v=100; if(v<-100) v=-100; return v; }
-  function setBoth(v){
-    v = clamp(v);
-    sl.value = String(v);
-    num.value = String(v);
-    // If engine reads from some global or hidden input, set that too
-    try { var fake = document.getElementById('biasPct'); if(fake) fake.value = String(v); } catch(e){}
-  }
-
-  // Initialize from whichever already has a value
-  setBoth(sl.value || num.value || 0);
-
-  sl.addEventListener('input',  function(){ setBoth(sl.value);  });
-  sl.addEventListener('change', function(){ setBoth(sl.value);  });
-  num.addEventListener('input', function(){ setBoth(num.value); });
-  num.addEventListener('change',function(){ setBoth(num.value); });
-
-  // Provide compatibility alias if old code expects window.biasPct.value
-  if (!document.getElementById('biasPct')) {
-    try {
-      Object.defineProperty(window, 'biasPct', { get: function(){ return { value: sl.value }; }});
-    } catch(e){ /* ignore */ }
-  }
-})();
-</script>
-
-<!-- FIX39: Disable bias controls unless Mode=Random -->
-<script>
-(function(){
-  function findModeSelect(){
-    const selects = Array.from(document.querySelectorAll('select'));
-    for(const sel of selects){
-      const hasRandom = Array.from(sel.options).some(o => /random/i.test(o.text) || /random/i.test(o.value));
-      const hasUpOnly = Array.from(sel.options).some(o => /(up\s*only|up-only)/i.test(o.text) || /(up\s*only|up-only)/i.test(o.value));
-      const hasDownOnly = Array.from(sel.options).some(o => /(down\s*only|down-only)/i.test(o.text) || /(down\s*only|down-only)/i.test(o.value));
-      if(hasRandom && (hasUpOnly || hasDownOnly)) return sel;
-    }
-    // fallback: first select with label 'Mode'
-    const labels = Array.from(document.querySelectorAll('label'));
-    for(const lab of labels){
-      if(/\bmode\b/i.test(lab.textContent)){
-        const forId = lab.getAttribute('for');
-        if(forId){
-          const el = document.getElementById(forId);
-          if(el && el.tagName === 'SELECT') return el;
-        }
-      }
-    }
-    return null;
-  }
-  function findBiasControls(){
-    const biasNumber = document.querySelector('input[type="number"][id*="bias" i], input[type="number"][name*="bias" i]');
-    const biasSlider = document.querySelector('input[type="range"][id*="bias" i], input[type="range"][name*="bias" i]');
-    return {biasNumber, biasSlider};
-  }
-  function setDisabled(el, disabled){
-    if(!el) return;
-    el.disabled = disabled;
-    const wrap = el.closest('div') || el.parentElement;
-    if(wrap){
-      if(disabled){ wrap.classList.add('bias-disabled'); }
-      else{ wrap.classList.remove('bias-disabled'); }
-    }
-    el.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-  }
-  function updateBiasControls(){
-    const modeSel = findModeSelect();
-    const {biasNumber, biasSlider} = findBiasControls();
-    if(!modeSel) return;
-    const isRandom = /random/i.test(modeSel.value || '');
-    setDisabled(biasNumber, !isRandom);
-    setDisabled(biasSlider, !isRandom);
-  }
-  function init(){
-    const modeSel = findModeSelect();
-    if(!modeSel) return;
-    modeSel.addEventListener('change', updateBiasControls);
-    updateBiasControls();
-    setTimeout(updateBiasControls, 100);
-  }
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', init);
-  }else{
-    init();
-  }
-})();
-</script>
-
-
-
-<!-- FIX42: Bias '+' overlay that aligns perfectly and preserves number input behavior -->
-<script>
-(function(){
-  function findBiasNumber(){
-    const inputs = Array.from(document.querySelectorAll('input[type="number"]'));
-    return inputs.find(el => /bias/i.test(el.id) || /bias/i.test(el.name));
-  }
-  function ensureOverlay(input){
-    if(!input) return null;
-    if(input.closest('.bias-overlay-wrap')) return input.closest('.bias-overlay-wrap');
-    const wrap = document.createElement('span');
-    wrap.className = 'bias-overlay-wrap';
-    const plus = document.createElement('span');
-    plus.className = 'bias-overlay-plus';
-    plus.textContent = '+';
-    input.parentNode.insertBefore(wrap, input);
-    wrap.appendChild(plus);
-    wrap.appendChild(input);
-    return wrap;
-  }
-  function updatePlus(input){
-    const wrap = input.closest('.bias-overlay-wrap');
-    if(!wrap) return;
-    const val = parseFloat(input.value);
-    if(Number.isFinite(val) && val > 0){
-      wrap.classList.add('bias-positive');
-    }else{
-      wrap.classList.remove('bias-positive');
-    }
-  }
-  function init(){
-    const input = findBiasNumber();
-    if(!input) return;
-    const wrap = ensureOverlay(input);
-    updatePlus(input);
-    // Update on input/change
-    input.addEventListener('input', () => updatePlus(input));
-    input.addEventListener('change', () => updatePlus(input));
-    // Observe value attribute changes from slider sync
-    const observer = new MutationObserver(() => updatePlus(input));
-    observer.observe(input, { attributes: true, attributeFilter: ['value'] });
-    // Also hook the slider if present
-    const slider = document.querySelector('input[type="range"][id*="bias" i], input[type="range"][name*="bias" i]');
-    if(slider){
-      slider.addEventListener('input', () => updatePlus(input));
-      slider.addEventListener('change', () => updatePlus(input));
-    }
-  }
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
-</script>
+  startBtn.addEventListener('click', ()=> running?stop():start());
+})();</script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>A.I.R. Metronome — FIX19 + Deterministic Repeats Engine (UI Step 1j Unified Commit Everywhere)</title>
+<title>A.I.R. Metronome — FIX19 + Deterministic Repeats Engine (UI Step 1k Unified Commit + Spacebar + CI Subs)</title>
 <style>
   :root{
     /* Theme tokens */
@@ -102,7 +102,7 @@
       <div class="field"><label>Max Tempo</label><input id="maxTempo" type="number" value="180" min="20" max="300"></div>
       <div class="field"><label>Beats per Tempo</label><input id="beatsPerTempo" type="number" value="4" min="1" max="16"></div>
       <div class="field"><label>Repeats per Tempo</label><input id="repeatsPerTempo" type="number" value="2" min="1" max="64"></div>
-      <div class="field"><label>Count-In Beats (every cycle)</label><input id="countInBeats" type="number" value="2" min="0" max="16"></div>
+      <div class="field"><label>Count-In Beats (every cycle)</label><input id="countInBeats" type="number" value="2" min="0" max="16"></div><div class="field"><label class="sr" for="includeSubdivisionsInCountOff">Include subdivisions in count-off</label><label class="inline"><input id="includeSubdivisionsInCountOff" type="checkbox" /> <span>Include subdivisions in count-off</span></label></div>
       <div class="field"><label>Subdivisions per Beat</label><input id="subsPerBeat" type="number" value="2" min="1" max="8"></div>
       <div class="field"><label>Min Change</label><input id="minStep" type="number" value="1" min="1" max="60"></div>
       <div class="field"><label>Max Change</label><input id="maxStep" type="number" value="5" min="1" max="60"></div>
@@ -120,17 +120,10 @@
       <div class="field muter">
         <label>Mute subdivisions</label>
         <button class="btn" id="muteBtn" aria-haspopup="dialog" aria-expanded="false">Mute subdivisions ▾</button>
-        <div class="menu" id="muteMenu" role="dialog" aria-modal="true" aria-label="Subdivision muting menu">
-          <h4>Apply muting to count-in</h4>
-          <label class="inline"><input id="applyToCountIn" type="checkbox"/> <span>Include in count-in</span></label>
-          <div style="margin-top:8px"><label>Subdivisions:</label> <span id="subCountBadge" class="chip">2</span></div>
-          <div class="list" id="subList"></div>
-          <div class="help">Uncheck sub-notes to silence them. <button class="btn" id="resetMute">Reset Muting</button></div>
-        </div>
-      </div>
+        <div class="menu" id="muteMenu" role="dialog" aria-modal="true" aria-label="Subdivision muting menu"><label class="inline"><input id="applyToCountIn" type="checkbox"/> <span>Apply muting to count-in</span></label><div class="list" id="subList"></div><div class="help">Uncheck sub-notes to silence them. <button class="btn" id="resetMute">Unmute All</button></div></div></div></div>
     </div>
 
-    <div class="foot">Live volume preview when stopped: move the volume slider.</div>
+    <div class="foot">Live volume preview when stopped: move the volume slider. Space toggles Start/Stop.</div>
   </div>
 </div>
 
@@ -161,9 +154,8 @@
   const volume = document.getElementById('volume');
   const muteBtn = document.getElementById('muteBtn');
   const muteMenu = document.getElementById('muteMenu');
-  const subList = document.getElementById('subList');
-  const subCountBadge = document.getElementById('subCountBadge');
-  const applyToCountIn = document.getElementById('applyToCountIn');
+  const subList = document.getElementById('subList');  const applyToCountIn = document.getElementById('applyToCountIn');
+  const includeSubdivisionsInCountOff = document.getElementById('includeSubdivisionsInCountOff');
   const resetMute = document.getElementById('resetMute');
 
   // Bias sync
@@ -222,6 +214,22 @@
     syncingRange = false;
   }
 
+  // Keep step range sane on commit
+  function enforceStepRange(sourceId){
+    let minV = Number(minStep.value);
+    let maxV = Number(maxStep.value);
+    if (!isNum(minV) || !isNum(maxV)) return;
+    if (minV < 1) minV = 1;
+    if (maxV < 1) maxV = 1;
+    if (minV > maxV){
+      if (sourceId === 'minStep') { maxV = minV; maxStep.value = rint(maxV); }
+      else { minV = maxV; minStep.value = rint(minV); }
+    } else {
+      minStep.value = rint(minV);
+      maxStep.value = rint(maxV);
+    }
+  }
+
   function bindCommit(el, onCommit){
     const commit = () => { onCommit && onCommit(); };
     el.addEventListener('change', commit);
@@ -245,17 +253,18 @@
   bindCommit(maxTempo, ()=>enforceRange('maxTempo'));
   bindCommit(startTempo, ()=>enforceRange('startTempo'));
 
-  // Other numeric inputs: commit-only behavior + any side effects
+  // Other numeric inputs: commit-only behavior + side effects
   bindCommit(beatsPerTempo, ()=>{});
   bindCommit(repeatsPerTempo, ()=>{});
   bindCommit(countInBeats, ()=>{});
   bindCommit(subsPerBeat, ()=>{ buildSubList(); });
-  bindCommit(minStep, ()=>{});
-  bindCommit(maxStep, ()=>{});
+  bindCommit(minStep, ()=>{ enforceStepRange('minStep'); });
+  bindCommit(maxStep, ()=>{ enforceStepRange('maxStep'); });
   bindCommit(biasPct, ()=>{ setBias(biasPct.value); }); // sync number -> slider on commit
 
   // Initial pass
   enforceRange();
+  enforceStepRange();
 
   // Popover
   function setMenuExpanded(open){
@@ -271,9 +280,7 @@
   });
 
   function buildSubList(){
-    const n = Math.max(1, +subsPerBeat.value||1);
-    subCountBadge.textContent = n;
-    subList.innerHTML='';
+    const n = Math.max(1, +subsPerBeat.value||1);    subList.innerHTML='';
     for(let i=1;i<=n;i++){
       const id='submute_'+i;
       const li=document.createElement('label'); li.className='inline chip';
@@ -299,6 +306,7 @@
     buffers.ci   = makeTone(1400,0.045,42);
     buffers.beat = makeTone(950,0.040,40);
     buffers.sub  = makeTone(620,0.036,36);
+    buffers.cisub = makeTone(940,0.036,36);
   }
   function play(bufName, when, gainMul=0.85){
     const now = ctx.currentTime;
@@ -338,14 +346,15 @@
       let sub   = Math.max(1, +subsPerBeat.value||1);
       let ciN   = Math.max(0, +countInBeats.value||0);
       let mask  = mutedMask(sub);
-      let includeMuteInCI = applyToCountIn.checked;
+      let includeMuteInCI = applyToCountIn.checked; // retained for future use
+      let includeSubsInCI = includeSubdivisionsInCountOff && includeSubdivisionsInCountOff.checked;
 
       let beatInterval = 60/tempo;
       let subInterval  = beatInterval/sub;
       let next = ctx.currentTime + 0.12;
 
-      let state='countin';
-      let ciLeft=ciN;
+      let state = (ciN>0)? 'countin' : 'beats';
+      let ciBeatsLeft=ciN;
       let beatIdx=0;
       let subSlot = 0; // 0..sub-1 (0 = main beat slot)
       let repsDone=0;
@@ -371,6 +380,7 @@
         ciN  = Math.max(0, +countInBeats.value||0);
         mask = mutedMask(sub);
         includeMuteInCI = applyToCountIn.checked;
+        includeSubsInCI = includeSubdivisionsInCountOff && includeSubdivisionsInCountOff.checked;
         refresh();
       }
 
@@ -378,15 +388,39 @@
       function tick(){
         while(next < ctx.currentTime + lookahead){
           if(state==='countin'){
-            if(ciLeft>0){
+            // During count-off: optionally include muted subdivisions
+            const includeSubsCI = includeSubdivisionsInCountOff && includeSubdivisionsInCountOff.checked;
+            if(subSlot===0){
+              // Play the count-off beat
               play('ci', next, 0.95); flash('ci');
-              ciLeft--; next += beatInterval; continue;
+              if(includeSubsCI){
+                subSlot = 1;           // step into subdivisions
+                next += subInterval;   // schedule first subdivision slot
+              } else {
+                // No subdivisions in count-off: jump to next whole beat
+                next += (60/tempo);
+                ciBeatsLeft--;
+                if(ciBeatsLeft === 0){
+                  beatIdx = 0; subSlot = 0; state = 'beats';
+                }
+              }
+              continue;
             }
-            // start a fresh cycle
-            beatIdx=0;
-            subSlot=0;
-            state='beats';
-            continue;
+            if(includeSubsCI && subSlot < sub){
+              const applyMuteCI = applyToCountIn && applyToCountIn.checked;
+              const shouldPlay = applyMuteCI ? !!mask[subSlot] : true;
+              if(shouldPlay){ play('cisub', next, 0.55); flash('sub'); }
+              subSlot++;
+              next += subInterval;
+              if(subSlot < sub) continue;
+              // finished all subdivisions for this beat
+              ciBeatsLeft--;
+              subSlot = 0;
+              if(ciBeatsLeft === 0){
+                beatIdx = 0; state = 'beats';
+              }
+              continue;
+            }
           }
 
           // beats state
@@ -410,8 +444,9 @@
           // cycle finished
           repsDone++;
           if(repsDone >= rptN){ repsDone=0; pendingTempo=true; }
-          ciLeft=ciN;
-          state='countin';
+          ciBeatsLeft=ciN;
+          subSlot=0; // ensure count-in starts at beat boundary
+          state = (ciN>0)? 'countin' : 'beats';
         }
       }
 
@@ -429,7 +464,20 @@
     startBtn.textContent='Start';
   }
 
+  // Start/Stop button
   startBtn.addEventListener('click', ()=> running?stop():start());
+
+  // Space toggles start/stop (not when typing in inputs or select open)
+  document.addEventListener('keydown', (e)=>{
+    if(e.code === 'Space' || e.key === ' '){
+      const tag = (document.activeElement && document.activeElement.tagName) || '';
+      const isTyping = /INPUT|TEXTAREA|SELECT/.test(tag);
+      if(!isTyping){
+        e.preventDefault();
+        running ? stop() : start();
+      }
+    }
+  });
 })();</script>
 </body>
 </html>

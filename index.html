@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>A.I.R. Metronome — FIX19 + Deterministic Repeats Engine (UI Step 1k Unified Commit + Spacebar + CI Subs)</title>
+<title>A.I.R. Metronome — 2-Panel, Live Subs, Spacebar, Sub-Boxes Removed, Refined Theming</title>
 <style>
   :root{
     /* Theme tokens */
@@ -20,55 +20,200 @@
 
     --focus: 0 0 0 2px rgba(79,179,255,.4);
   }
-  [data-theme="light"]{ --bg:#f4efe7; --fg:#1d2430; --muted:#5a606b; --line:#d9cfbf; --panel:#f5f1ea; --input:#ffffff; --chip:#fff9ef; --accent:#1a66ff; --ok:#0f8e64; --gold:#b07d00; }
-  [data-theme="yellow"]{ --bg:#e1b507; --fg:#17130a; --muted:#3a301a; --line:#d0a908; --panel:#f0c427; --input:#fff4b4; --chip:#ffe780; --accent:#0f3b9e; --ok:#0f6c4a; --gold:#7a5600; }
-  [data-theme="red"]{ --bg:#25080b; --fg:#ffecec; --muted:#ffb3b3; --line:#62222a; --panel:#2e0e13; --input:#3a141a; --chip:#47171d; --accent:#ff8aa0; --ok:#62e0b9; --gold:#ffd56b; }
-  [data-theme="green"]{ --bg:#0b1c18; --fg:#e6fff7; --muted:#9ad5c3; --line:#1d3a33; --panel:#0f2621; --input:#12312a; --chip:#163b34; --accent:#7fe8ff; --ok:#56f0b9; --gold:#ffe18a; }
+  [data-theme="light"]{
+    --bg:#f4efe7; --fg:#1d2430; --muted:#5a606b; --line:#d4c8b4;
+    --panel:#f5f1ea; --input:#ffffff; --chip:#fff9ef;
+    --accent:#1a66ff; --ok:#0f8e64; --gold:#b07d00;
+  }
+  [data-theme="yellow"]{
+    --bg:#e1b507; --fg:#17130a; --muted:#3a301a; --line:#d0a908;
+    --panel:#f6d54a; --input:#fff4b4; --chip:#ffe780;
+    --accent:#0f3b9e; --ok:#0f6c4a; --gold:#7a5600;
+  }
+  [data-theme="red"]{
+    --bg:#25080b; --fg:#ffecec; --muted:#ffb3b3; --line:#62222a;
+    --panel:#2e0e13; --input:#3a141a; --chip:#47171d;
+    --accent:#ff8aa0; --ok:#62e0b9; --gold:#ffd56b;
+  }
+  [data-theme="green"]{
+    --bg:#0b1c18; --fg:#e6fff7; --muted:#9ad5c3; --line:#1d3a33;
+    --panel:#0f2621; --input:#12312a; --chip:#163b34;
+    --accent:#7fe8ff; --ok:#56f0b9; --gold:#ffe18a;
+  }
 
   /* Base */
-  body{background:var(--bg); color:var(--fg); font:15px/1.45 system-ui,Segoe UI,Roboto,Inter,Arial; margin:0;}
+  body{
+    background:var(--bg);
+    color:var(--fg);
+    font:15px/1.45 system-ui,Segoe UI,Roboto,Inter,Arial;
+    margin:0;
+  }
   .wrap{max-width:980px; margin:24px auto 56px; padding:0 16px;}
   h1{margin:0 0 10px; font-weight:900; font-size:22px; letter-spacing:.2px;}
   .top{display:flex; align-items:center; justify-content:space-between; gap:12px}
   .tempo{font-size:36px; font-weight:900; letter-spacing:.5px}
 
   /* Controls */
-  select, input[type=number], input[type=text]{
-    width:100%; padding:8px 10px; border-radius:var(--radii); border:1px solid var(--line); background:var(--input); color:var(--fg);
+  select,
+  input[type=number],
+  input[type=text]{
+    width:100%;
+    padding:8px 10px;
+    border-radius:var(--radii);
+    border:1px solid var(--line);
+    background:var(--input);
+    color:var(--fg);
     transition: box-shadow .15s ease, border-color .15s ease, background-color .15s ease;
   }
-  input[type=range]{ width:100%; }
 
-  select:focus, input:focus{ outline:none; box-shadow: var(--focus); border-color: transparent; }
+  /* Themed checkboxes (all of them) */
+  input[type=checkbox]{
+    width:18px;
+    height:18px;
+    cursor:pointer;
+    accent-color:var(--accent);
+  }
+  /* Explicitly reinforce theming on the two lower checkboxes just in case */
+  #includeSubdivisionsInCountOff,
+  #applyToCountIn{
+    accent-color:var(--accent);
+  }
+
+  /* Themed sliders (volume + bias) */
+  input[type=range]{
+    -webkit-appearance:none;
+    appearance:none;
+    width:100%;
+    height:4px;
+    border-radius:999px;
+    background:var(--line);
+    outline:none;
+    margin:4px 0;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    appearance:none;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid #00000040;
+    cursor:pointer;
+    box-shadow:0 0 0 1px #00000033;
+  }
+  input[type=range]::-moz-range-track{
+    height:4px;
+    border-radius:999px;
+    background:var(--line);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid #00000040;
+    cursor:pointer;
+    box-shadow:0 0 0 1px #00000033;
+  }
+
+  select:focus,
+  input:focus{
+    outline:none;
+    box-shadow: var(--focus);
+    border-color: transparent;
+  }
 
   .btn{
-    padding:10px 16px; border-radius:var(--radii); border:1px solid var(--line); background:var(--chip); color:var(--fg); cursor:pointer;
+    padding:10px 16px;
+    border-radius:var(--radii);
+    border:1px solid var(--line);
+    background:var(--chip);
+    color:var(--fg);
+    cursor:pointer;
     transition: box-shadow .15s ease, filter .12s ease;
   }
   .btn:hover{ filter:brightness(1.05); }
-  .btn:focus{ outline:none; box-shadow: var(--focus); border-color: transparent; }
-  .btn.primary{background:var(--accent); color:#00142a; border-color:transparent; font-weight:700}
+  .btn:focus{
+    outline:none;
+    box-shadow: var(--focus);
+    border-color: transparent;
+  }
+  .btn.primary{
+    background:var(--accent);
+    color:#00142a;
+    border-color:transparent;
+    font-weight:700;
+  }
 
   .status{font-size:12px; color:var(--muted)}
-  .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radii-lg); padding:14px;}
-  .grid{display:grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap:var(--gap-m);}
-  .field label{display:block; color:var(--muted); font-size:12px; margin-bottom:5px;}
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radii-lg);
+    padding:14px;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px,1fr));
+    gap:var(--gap-m);
+  }
+  .field label{
+    display:block;
+    color:var(--muted);
+    font-size:12px;
+    margin-bottom:5px;
+  }
   .row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
-  .dot{width:14px; height:14px; border-radius:50%; background:#5a6578; display:inline-block; margin-left:8px}
+  .dot{
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background:#5a6578;
+    display:inline-block;
+    margin-left:8px;
+  }
   .inline{display:flex; align-items:center; gap:8px}
-  .muter{position:relative}
-  .menu{position:absolute; top:36px; right:0; width:260px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radii); padding:10px; display:none; box-shadow:0 10px 30px rgba(0,0,0,.35)}
-  .menu.open{display:block}
-  .menu h4{margin:0 0 8px; font-size:13px; color:var(--muted)}
-  .menu small{color:var(--muted)}
-  .menu .list{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px}
-  .chip{padding:6px 10px; border-radius:10px; background:var(--chip); border:1px solid var(--line); color:var(--fg)}
   .help{font-size:12px; color:var(--muted); margin-top:8px}
   .foot{margin-top:12px; font-size:12px; color:var(--muted)}
   .sr{position:absolute; left:-9999px}
 
-  /* Slightly larger targets for touch */
-  .menu input[type=checkbox]{ width:16px; height:16px; }
+  /* Two-panel layout */
+  .panelRow{
+    display:flex;
+    gap:var(--gap-m);
+    align-items:flex-start;
+    flex-wrap:wrap;
+    margin-top:16px;
+  }
+  .panel.small{
+    flex:0 0 260px;
+    max-width:280px;
+  }
+  .panel.large{
+    flex:1 1 0;
+  }
+
+  /* Subdivision checkboxes row */
+  .subsRow{
+    display:flex;
+    gap:10px;
+    margin-top:8px;
+    flex-wrap:nowrap;
+  }
+  .subBox{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    margin:0;
+    background:transparent;
+    border:none;
+    width:auto;
+    height:auto;
+  }
+  .subBox input{
+    margin:0;
+  }
 </style>
 </head>
 <body data-theme="dark">
@@ -95,35 +240,58 @@
     </div>
   </div>
 
-  <div class="panel">
-    <div class="grid">
-      <div class="field"><label>Start Tempo</label><input id="startTempo" type="number" value="60" min="20" max="300"></div>
-      <div class="field"><label>Min Tempo</label><input id="minTempo" type="number" value="40" min="20" max="300"></div>
-      <div class="field"><label>Max Tempo</label><input id="maxTempo" type="number" value="180" min="20" max="300"></div>
-      <div class="field"><label>Beats per Tempo</label><input id="beatsPerTempo" type="number" value="4" min="1" max="16"></div>
-      <div class="field"><label>Repeats per Tempo</label><input id="repeatsPerTempo" type="number" value="2" min="1" max="64"></div>
-      <div class="field"><label>Count-In Beats (every cycle)</label><input id="countInBeats" type="number" value="2" min="0" max="16"></div><div class="field"><label class="sr" for="includeSubdivisionsInCountOff">Include subdivisions in count-off</label><label class="inline"><input id="includeSubdivisionsInCountOff" type="checkbox" /> <span>Include subdivisions in count-off</span></label></div>
-      <div class="field"><label>Subdivisions per Beat</label><input id="subsPerBeat" type="number" value="2" min="1" max="8"></div>
-      <div class="field"><label>Min Change</label><input id="minStep" type="number" value="1" min="1" max="60"></div>
-      <div class="field"><label>Max Change</label><input id="maxStep" type="number" value="5" min="1" max="60"></div>
+  <div class="panelRow">
+    <!-- LEFT: main controls (large panel) -->
+    <div class="panel large">
+      <div class="grid">
+        <div class="field"><label>Start Tempo</label><input id="startTempo" type="number" value="60" min="20" max="300"></div>
+        <div class="field"><label>Min Tempo</label><input id="minTempo" type="number" value="40" min="20" max="300"></div>
+        <div class="field"><label>Max Tempo</label><input id="maxTempo" type="number" value="180" min="20" max="300"></div>
+        <div class="field"><label>Beats per Tempo</label><input id="beatsPerTempo" type="number" value="4" min="1" max="16"></div>
+        <div class="field"><label>Repeats per Tempo</label><input id="repeatsPerTempo" type="number" value="2" min="1" max="64"></div>
+        <div class="field"><label>Count-In Beats (every cycle)</label><input id="countInBeats" type="number" value="2" min="0" max="16"></div>
 
-      <!-- Bias controls: number + slider, synced on commit for number -->
-      <div class="field">
-        <label for="biasPct">Bias % (−100…+100)</label>
-        <input id="biasPct" type="number" value="0" min="-100" max="100" step="1" aria-describedby="biasHelp">
-        <input id="biasSlider" type="range" value="0" min="-100" max="100" step="1" style="margin-top:6px;">
-        <div id="biasHelp" class="help">Negative = more likely to go down. Positive = more likely to go up.</div>
+        <div class="field"><label>Min Change</label><input id="minStep" type="number" value="1" min="1" max="60"></div>
+        <div class="field"><label>Max Change</label><input id="maxStep" type="number" value="5" min="1" max="60"></div>
+
+        <!-- Bias controls: number + slider, synced on commit for number -->
+        <div class="field">
+          <label for="biasPct">Bias % (−100…+100)</label>
+          <input id="biasPct" type="number" value="0" min="-100" max="100" step="1" aria-describedby="biasHelp">
+          <input id="biasSlider" type="range" value="0" min="-100" max="100" step="1" style="margin-top:6px;">
+          <div id="biasHelp" class="help">Negative = more likely to go down. Positive = more likely to go up.</div>
+        </div>
+
+        <div class="field"><label>Volume</label><input id="volume" type="range" value="60" min="0" max="100"></div>
       </div>
 
-      <div class="field"><label>Volume</label><input id="volume" type="range" value="60" min="0" max="100"></div>
-
-      <div class="field muter">
-        <label>Mute subdivisions</label>
-        <button class="btn" id="muteBtn" aria-haspopup="dialog" aria-expanded="false">Mute subdivisions ▾</button>
-        <div class="menu" id="muteMenu" role="dialog" aria-modal="true" aria-label="Subdivision muting menu"><label class="inline"><input id="applyToCountIn" type="checkbox"/> <span>Apply muting to count-in</span></label><div class="list" id="subList"></div><div class="help">Uncheck sub-notes to silence them. <button class="btn" id="resetMute">Unmute All</button></div></div></div></div>
+      <div class="foot">Live volume preview when stopped: move the volume slider. Space bar also starts and stops the metronome.</div>
     </div>
 
-    <div class="foot">Live volume preview when stopped: move the volume slider. Space toggles Start/Stop.</div>
+    <!-- RIGHT: subdivision controls (small panel) -->
+    <div class="panel small">
+      <div class="field">
+        <label>Subdivisions per Beat</label>
+        <input id="subsPerBeat" type="number" value="2" min="1" max="8">
+        <div class="subsRow" id="subList"></div>
+        <div class="help">Uncheck boxes to mute subdivisions.</div>
+        <button class="btn" id="resetMute" style="margin-top:8px;">Unmute All</button>
+      </div>
+
+      <div class="field">
+        <label class="inline" for="includeSubdivisionsInCountOff">
+          <input id="includeSubdivisionsInCountOff" type="checkbox" />
+          <span>Include subdivisions in count-off</span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label class="inline">
+          <input id="applyToCountIn" type="checkbox"/>
+          <span>Apply muting to count-in</span>
+        </label>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -152,9 +320,8 @@
   const biasPct = document.getElementById('biasPct');
   const biasSlider = document.getElementById('biasSlider');
   const volume = document.getElementById('volume');
-  const muteBtn = document.getElementById('muteBtn');
-  const muteMenu = document.getElementById('muteMenu');
-  const subList = document.getElementById('subList');  const applyToCountIn = document.getElementById('applyToCountIn');
+  const subList = document.getElementById('subList');
+  const applyToCountIn = document.getElementById('applyToCountIn');
   const includeSubdivisionsInCountOff = document.getElementById('includeSubdivisionsInCountOff');
   const resetMute = document.getElementById('resetMute');
 
@@ -266,38 +433,55 @@
   enforceRange();
   enforceStepRange();
 
-  // Popover
-  function setMenuExpanded(open){
-    muteBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    muteMenu.classList.toggle('open', open);
-  }
-  muteBtn.addEventListener('click', (e) => { e.stopPropagation(); setMenuExpanded(!muteMenu.classList.contains('open')); buildSubList(); });
-  document.addEventListener('click', (e)=>{
-    if(!muteMenu.contains(e.target) && e.target!==muteBtn){ setMenuExpanded(false); }
-  });
+  // Reset muting
   resetMute.addEventListener('click', () => {
     [...subList.querySelectorAll('input[type=checkbox]')].forEach(cb=>cb.checked=true);
   });
 
   function buildSubList(){
-    const n = Math.max(1, +subsPerBeat.value||1);    subList.innerHTML='';
+    const n = Math.max(1, +subsPerBeat.value||1);
+    subList.innerHTML='';
     for(let i=1;i<=n;i++){
       const id='submute_'+i;
-      const li=document.createElement('label'); li.className='inline chip';
-      li.innerHTML=`<input type="checkbox" id="${id}" checked> <span>${i}</span>`;
+      const li=document.createElement('label'); 
+      li.className='subBox';
+      li.innerHTML=`<input type="checkbox" id="${id}" checked aria-label="Subdivision ${i}">`;
+      const cb = li.querySelector('input');
+      // Auto-confirm: blur after change so space bar won't re-toggle this checkbox
+      cb.addEventListener('change', () => {
+        cb.blur();
+      });
       subList.appendChild(li);
     }
   }
   buildSubList();
 
+  // Also blur the two other right-panel checkboxes on change
+  includeSubdivisionsInCountOff.addEventListener('change', () => {
+    includeSubdivisionsInCountOff.blur();
+  });
+  applyToCountIn.addEventListener('change', () => {
+    applyToCountIn.blur();
+  });
+
   // AUDIO
   let ctx, buffers={};
   const AC = window.AudioContext || window.webkitAudioContext;
   function ensureCtx(){ if(!ctx){ ctx = new AC(); } return ctx.resume(); }
-  function flash(kind){ pulse.style.background = kind==='ci'?'var(--gold)':kind==='beat'?'var(--accent)':'var(--ok)'; setTimeout(()=>pulse.style.background='#5a6578',85); }
+  function flash(kind){
+    pulse.style.background = kind==='ci'
+      ? 'var(--gold)'
+      : kind==='beat'
+      ? 'var(--accent)'
+      : 'var(--ok)';
+    setTimeout(()=>pulse.style.background='#5a6578',85);
+  }
   function makeTone(hz, len=0.038, decay=38){
     const sr=ctx.sampleRate, n=Math.floor(sr*len), buf=ctx.createBuffer(1,n,sr), ch=buf.getChannelData(0);
-    for(let i=0;i<n;i++){ const tt=i/sr; ch[i]=Math.sin(2*Math.PI*hz*tt)*Math.exp(-tt*decay); }
+    for(let i=0;i<n;i++){
+      const tt=i/sr;
+      ch[i]=Math.sin(2*Math.PI*hz*tt)*Math.exp(-tt*decay);
+    }
     return buf;
   }
   async function loadBuffers(){
@@ -317,11 +501,20 @@
   }
   // live preview when stopped
   let running=false;
-  volume.addEventListener('input', ()=>{ if(!running){ ensureCtx().then(loadBuffers).then(()=>{ play('beat', ctx.currentTime+0.02, 0.5); }); } });
+  volume.addEventListener('input', ()=>{
+    if(!running){
+      ensureCtx().then(loadBuffers).then(()=>{
+        play('beat', ctx.currentTime+0.02, 0.5);
+      });
+    }
+  });
 
   // Deterministic scheduler
   let loop=null;
-  function clampTempo(v){ const lo=+minTempo.value, hi=+maxTempo.value; return Math.min(hi, Math.max(lo, Math.round(v))); }
+  function clampTempo(v){
+    const lo=+minTempo.value, hi=+maxTempo.value;
+    return Math.min(hi, Math.max(lo, Math.round(v)));
+  }
   function stepSize(){
     const min=+minStep.value, max=+maxStep.value, bias=+biasPct.value;
     const pUp=Math.max(0,Math.min(1,0.5+bias/200));
@@ -346,7 +539,7 @@
       let sub   = Math.max(1, +subsPerBeat.value||1);
       let ciN   = Math.max(0, +countInBeats.value||0);
       let mask  = mutedMask(sub);
-      let includeMuteInCI = applyToCountIn.checked; // retained for future use
+      let includeMuteInCI = applyToCountIn.checked;
       let includeSubsInCI = includeSubdivisionsInCountOff && includeSubdivisionsInCountOff.checked;
 
       let beatInterval = 60/tempo;
@@ -373,28 +566,36 @@
         const delta = stepSize();
         tempo = clampTempo(tempo + delta);
         tempoNow.textContent = tempo;
-        // re-read dynamic form values
+        // left-hand values updated on tempo change; right-hand (subs panel) stays live via tick()
         bpt  = Math.max(1, +beatsPerTempo.value||4);
         rptN = Math.max(1, +repeatsPerTempo.value||1);
-        sub  = Math.max(1, +subsPerBeat.value||1);
         ciN  = Math.max(0, +countInBeats.value||0);
-        mask = mutedMask(sub);
-        includeMuteInCI = applyToCountIn.checked;
-        includeSubsInCI = includeSubdivisionsInCountOff && includeSubdivisionsInCountOff.checked;
         refresh();
       }
 
       const lookahead=0.12;
       function tick(){
         while(next < ctx.currentTime + lookahead){
+          // LIVE read of right-hand (subs) panel
+          const newSub = Math.max(1, +subsPerBeat.value||1);
+          if(newSub !== sub){
+            sub = newSub;
+            subSlot = 0;          // resync at a beat boundary
+            refresh();
+          }
+          mask  = mutedMask(sub);
+          includeMuteInCI = applyToCountIn && applyToCountIn.checked;
+          includeSubsInCI = includeSubdivisionsInCountOff && includeSubdivisionsInCountOff.checked;
+
           if(state==='countin'){
             // During count-off: optionally include muted subdivisions
-            const includeSubsCI = includeSubdivisionsInCountOff && includeSubdivisionsInCountOff.checked;
+            const includeSubsCI = includeSubsInCI;
             if(subSlot===0){
               // Play the count-off beat
               play('ci', next, 0.95); flash('ci');
               if(includeSubsCI){
                 subSlot = 1;           // step into subdivisions
+                subInterval = (60/tempo)/sub;
                 next += subInterval;   // schedule first subdivision slot
               } else {
                 // No subdivisions in count-off: jump to next whole beat
@@ -407,7 +608,7 @@
               continue;
             }
             if(includeSubsCI && subSlot < sub){
-              const applyMuteCI = applyToCountIn && applyToCountIn.checked;
+              const applyMuteCI = includeMuteInCI;
               const shouldPlay = applyMuteCI ? !!mask[subSlot] : true;
               if(shouldPlay){ play('cisub', next, 0.55); flash('sub'); }
               subSlot++;
@@ -426,7 +627,7 @@
           // beats state
           if(subSlot===0){
             if(pendingTempo){ tempoAdvance(); pendingTempo=false; }
-            refresh(); // lock intervals for this beat
+            refresh(); // lock intervals for this beat (including current sub)
             play('beat', next, 0.85); flash('beat');
             subSlot=1;
             next += subInterval; continue;
@@ -467,17 +668,44 @@
   // Start/Stop button
   startBtn.addEventListener('click', ()=> running?stop():start());
 
-  // Space toggles start/stop (not when typing in inputs or select open)
+  // Robust space-bar handler
+  function isSpaceEvent(e){
+    return (
+      e.code === 'Space' ||
+      e.key === ' ' ||
+      e.key === 'Spacebar' ||
+      e.keyCode === 32 ||
+      e.which === 32
+    );
+  }
+
+  // Space toggles start/stop; checkboxes do NOT block it
   document.addEventListener('keydown', (e)=>{
-    if(e.code === 'Space' || e.key === ' '){
-      const tag = (document.activeElement && document.activeElement.tagName) || '';
-      const isTyping = /INPUT|TEXTAREA|SELECT/.test(tag);
-      if(!isTyping){
-        e.preventDefault();
-        running ? stop() : start();
+    if(!isSpaceEvent(e)) return;
+
+    const active = document.activeElement;
+    const tag = active && active.tagName;
+    let isTyping = false;
+
+    if(tag){
+      if(tag === 'INPUT'){
+        const type = (active.getAttribute('type') || '').toLowerCase();
+        if(type === 'checkbox' || type === 'radio'){
+          isTyping = false; // allow space to control transport, not the checkbox
+        } else {
+          isTyping = true; // text, number, etc.
+        }
+      } else if(tag === 'TEXTAREA' || tag === 'SELECT'){
+        isTyping = true;
       }
     }
+
+    if(isTyping) return;
+
+    e.preventDefault();
+    running ? stop() : start();
   });
+
 })();</script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>A.I.R. Metronome — 2-Panel, Live Subs, Spacebar, Sub-Boxes Removed, Refined Theming</title>
+<title>A.I.R. Metronome — 2-Panel, Half-BPM, Stop-at-Limit, Bias Down/Up</title>
 <style>
   :root{
     /* Theme tokens */
@@ -20,15 +20,31 @@
 
     --focus: 0 0 0 2px rgba(79,179,255,.4);
   }
-  [data-theme="light"]{
+  
+  [data-theme="blue"]{
+    /* Deep slate-blue surfaces inspired by ICU blue theme */
+    --bg:#243b59;
+    --fg:#f5f8ff;
+    --muted:#afc3db;
+    --line:#3b4f73;
+    --panel:#2c4870;
+    --input:#335386;
+    --chip:#355a8d;
+    --accent:#60a5fa;
+    --ok:#34d399;
+    --gold:#fbbf24;
+  }
+
+[data-theme="light"]{
     --bg:#f4efe7; --fg:#1d2430; --muted:#5a606b; --line:#d4c8b4;
     --panel:#f5f1ea; --input:#ffffff; --chip:#fff9ef;
-    --accent:#1a66ff; --ok:#0f8e64; --gold:#b07d00;
+    /* Warmer accent so light theme has its own checkbox/slider color */
+    --accent:#888888; --ok:#0f8e64; --gold:#b07d00;
   }
   [data-theme="yellow"]{
     --bg:#e1b507; --fg:#17130a; --muted:#3a301a; --line:#d0a908;
     --panel:#f6d54a; --input:#fff4b4; --chip:#ffe780;
-    --accent:#0f3b9e; --ok:#0f6c4a; --gold:#7a5600;
+    --accent:#d9852b; --ok:#0f6c4a; --gold:#7a5600;
   }
   [data-theme="red"]{
     --bg:#25080b; --fg:#ffecec; --muted:#ffb3b3; --line:#62222a;
@@ -41,19 +57,21 @@
     --accent:#7fe8ff; --ok:#56f0b9; --gold:#ffe18a;
   }
 
-  /* Base */
   body{
     background:var(--bg);
     color:var(--fg);
-    font:15px/1.45 system-ui,Segoe UI,Roboto,Inter,Arial;
+    font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Inter,Arial,sans-serif;
+    font-size:15px;
+    line-height:1.45;
     margin:0;
+    transition: background .25s ease, color .25s ease;
+    overflow-x:hidden;
   }
   .wrap{max-width:980px; margin:24px auto 56px; padding:0 16px;}
   h1{margin:0 0 10px; font-weight:900; font-size:22px; letter-spacing:.2px;}
   .top{display:flex; align-items:center; justify-content:space-between; gap:12px}
   .tempo{font-size:36px; font-weight:900; letter-spacing:.5px}
 
-  /* Controls */
   select,
   input[type=number],
   input[type=text]{
@@ -65,21 +83,24 @@
     color:var(--fg);
     transition: box-shadow .15s ease, border-color .15s ease, background-color .15s ease;
   }
+  /* Narrow numeric/text inputs so paired fields don't collide, and to improve small-screen layout */
+  input[type=number],
+  input[type=text]{
+    max-width:140px;
+  }
 
-  /* Themed checkboxes (all of them) */
+
   input[type=checkbox]{
     width:18px;
     height:18px;
     cursor:pointer;
     accent-color:var(--accent);
   }
-  /* Explicitly reinforce theming on the two lower checkboxes just in case */
   #includeSubdivisionsInCountOff,
   #applyToCountIn{
     accent-color:var(--accent);
   }
 
-  /* Themed sliders (volume + bias) */
   input[type=range]{
     -webkit-appearance:none;
     appearance:none;
@@ -125,24 +146,30 @@
 
   .btn{
     padding:10px 16px;
-    border-radius:var(--radii);
+    border-radius:999px;
     border:1px solid var(--line);
     background:var(--chip);
     color:var(--fg);
     cursor:pointer;
-    transition: box-shadow .15s ease, filter .12s ease;
+    font-weight:600;
+    transition: box-shadow .15s ease, filter .12s ease, transform .08s ease;
   }
-  .btn:hover{ filter:brightness(1.05); }
+  .btn:hover{ filter:brightness(1.03); transform:translateY(-0.5px); }
+  .btn:active{ transform:translateY(0); filter:brightness(0.98); }
   .btn:focus{
     outline:none;
     box-shadow: var(--focus);
     border-color: transparent;
   }
   .btn.primary{
-    background:var(--accent);
-    color:#00142a;
-    border-color:transparent;
+    border:none;
+    background:linear-gradient(135deg,
+      color-mix(in oklab, var(--accent) 72%, #ffffff),
+      var(--accent)
+    );
+    color:#06101b;
     font-weight:700;
+    box-shadow:0 10px 24px rgba(0,0,0,.25);
   }
 
   .status{font-size:12px; color:var(--muted)}
@@ -151,12 +178,38 @@
     border:1px solid var(--line);
     border-radius:var(--radii-lg);
     padding:14px;
+    box-shadow:0 10px 26px rgba(0,0,0,.25);
   }
   .grid{
     display:grid;
     grid-template-columns: repeat(auto-fit, minmax(210px,1fr));
     gap:var(--gap-m);
   }
+  .panel.large .grid{
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+
+  /* Explicit placement for first four fields on wide screens */
+  @media (min-width: 720px){
+    .panel.large .grid{
+      grid-auto-flow: row;
+    }
+    .panel.large .grid .field-start{ grid-row:1; grid-column:1; }
+    .panel.large .grid .field-beats{ grid-row:1; grid-column:2; }
+    .panel.large .grid .field-min{ grid-row:2; grid-column:1; }
+    .panel.large .grid .field-max{ grid-row:2; grid-column:2; }
+  }
+  @media (max-width: 719px){
+    /* On small screens, let fields stack naturally */
+    .panel.large .grid .field-start,
+    .panel.large .grid .field-beats,
+    .panel.large .grid .field-min,
+    .panel.large .grid .field-max{
+      grid-row:auto;
+      grid-column:auto;
+    }
+  }
+
   .field label{
     display:block;
     color:var(--muted);
@@ -177,7 +230,6 @@
   .foot{margin-top:12px; font-size:12px; color:var(--muted)}
   .sr{position:absolute; left:-9999px}
 
-  /* Two-panel layout */
   .panelRow{
     display:flex;
     gap:var(--gap-m);
@@ -193,7 +245,6 @@
     flex:1 1 0;
   }
 
-  /* Subdivision checkboxes row */
   .subsRow{
     display:flex;
     gap:10px;
@@ -231,7 +282,8 @@
       <label class="sr" for="theme">Theme</label>
       <select id="theme">
         <option value="dark">Dark</option>
-        <option value="light">Light (tan)</option>
+        <option value="blue">Blue</option>
+        <option value="light">Light</option>
         <option value="yellow">Yellow</option>
         <option value="red">Red</option>
         <option value="green">Green</option>
@@ -241,38 +293,67 @@
   </div>
 
   <div class="panelRow">
-    <!-- LEFT: main controls (large panel) -->
     <div class="panel large">
       <div class="grid">
-        <div class="field"><label>Start Tempo</label><input id="startTempo" type="number" value="60" min="20" max="300"></div>
-        <div class="field"><label>Min Tempo</label><input id="minTempo" type="number" value="40" min="20" max="300"></div>
-        <div class="field"><label>Max Tempo</label><input id="maxTempo" type="number" value="180" min="20" max="300"></div>
-        <div class="field"><label>Beats per Tempo</label><input id="beatsPerTempo" type="number" value="4" min="1" max="16"></div>
+        <div class="field field-start"><label>Start Tempo</label><input id="startTempo" type="number" value="60" min="20" max="300" step="1"></div>
+        <div class="field field-min"><label>Min Tempo</label><input id="minTempo" type="number" value="40" min="20" max="300" step="1"></div>
+        <div class="field field-max"><label>Max Tempo</label><input id="maxTempo" type="number" value="180" min="20" max="300" step="1"></div>
+        <div class="field field-beats"><label>Beats per Tempo</label><input id="beatsPerTempo" type="number" value="4" min="1" max="16"></div>
         <div class="field"><label>Repeats per Tempo</label><input id="repeatsPerTempo" type="number" value="2" min="1" max="64"></div>
         <div class="field"><label>Count-In Beats (every cycle)</label><input id="countInBeats" type="number" value="2" min="0" max="16"></div>
 
-        <div class="field"><label>Min Change</label><input id="minStep" type="number" value="1" min="1" max="60"></div>
-        <div class="field"><label>Max Change</label><input id="maxStep" type="number" value="5" min="1" max="60"></div>
+        <div class="field"><label>Min Change</label><input id="minStep" type="number" value="1" min="0.5" max="60" step="1"></div>
+        <div class="field"><label>Max Change</label><input id="maxStep" type="number" value="5" min="0.5" max="60" step="1"></div>
 
-        <!-- Bias controls: number + slider, synced on commit for number -->
         <div class="field">
-          <label for="biasPct">Bias % (−100…+100)</label>
-          <input id="biasPct" type="number" value="0" min="-100" max="100" step="1" aria-describedby="biasHelp">
-          <input id="biasSlider" type="range" value="0" min="-100" max="100" step="1" style="margin-top:6px;">
-          <div id="biasHelp" class="help">Negative = more likely to go down. Positive = more likely to go up.</div>
+          <label class="inline">
+            <input id="allowHalfSteps" type="checkbox">
+            <span>Allow 0.5 tempo values</span>
+          </label>
+        </div>
+
+        <div class="field">
+          <label>Bias (Down/Up)</label>
+          <div class="row">
+            <input id="biasDown" type="number" min="0" max="100" value="50" style="max-width:64px;">
+            <span>/</span>
+            <input id="biasUp" type="number" min="0" max="100" value="50" style="max-width:64px;">
+          </div>
+          <input id="biasSlider" type="range" value="50" min="0" max="100" step="1" style="margin-top:6px;">
+          <div id="biasHelp" class="help">100/0 = Always Down, 0/100 = Always Up, 50/50 = Neutral</div>
         </div>
 
         <div class="field"><label>Volume</label><input id="volume" type="range" value="60" min="0" max="100"></div>
+
+        <div class="field">
+          <label class="inline">
+            <input id="stopAtLimit" type="checkbox">
+            <span>Stop After Max/Min Tempo</span>
+          </label>
+        </div>
+
+        <div class="field">
+          <label>Stop after (minutes)</label>
+          <input id="stopAfterMinutes" type="number" value="0" min="0" max="36000" step="0.1">
+          <div class="help">0 = No time limit. Metronome will stop after this many minutes if greater than 0.</div>
+        </div>
       </div>
 
       <div class="foot">Live volume preview when stopped: move the volume slider. Space bar also starts and stops the metronome.</div>
     </div>
 
-    <!-- RIGHT: subdivision controls (small panel) -->
     <div class="panel small">
       <div class="field">
         <label>Subdivisions per Beat</label>
-        <input id="subsPerBeat" type="number" value="2" min="1" max="8">
+        <select id="subsPerBeat">
+          <option value="1">Quarters</option>
+          <option value="2">8th's</option>
+          <option value="3">Triplets</option>
+          <option value="4">16ths</option>
+          <option value="5">5's</option>
+          <option value="6">6's</option>
+          <option value="7">7's</option>
+        </select>
         <div class="subsRow" id="subList"></div>
         <div class="help">Uncheck boxes to mute subdivisions.</div>
         <button class="btn" id="resetMute" style="margin-top:8px;">Unmute All</button>
@@ -297,14 +378,13 @@
 
 <script>
 (() => {
-  // THEME
   const root = document.body;
   const themeSel = document.getElementById('theme');
+  themeSel.addEventListener('change', ()=> themeSel.blur());
   const pulse = document.getElementById('pulse');
   themeSel.addEventListener('change', () => { root.setAttribute('data-theme', themeSel.value); });
   root.setAttribute('data-theme', themeSel.value);
 
-  // UI refs
   const tempoNow = document.getElementById('tempoNow');
   const statusEl = document.getElementById('status');
   const startBtn = document.getElementById('startStop');
@@ -317,41 +397,89 @@
   const subsPerBeat = document.getElementById('subsPerBeat');
   const minStep = document.getElementById('minStep');
   const maxStep = document.getElementById('maxStep');
-  const biasPct = document.getElementById('biasPct');
+  const allowHalfSteps = document.getElementById('allowHalfSteps');
+  const biasDown = document.getElementById('biasDown');
+  const biasUp = document.getElementById('biasUp');
   const biasSlider = document.getElementById('biasSlider');
   const volume = document.getElementById('volume');
   const subList = document.getElementById('subList');
   const applyToCountIn = document.getElementById('applyToCountIn');
   const includeSubdivisionsInCountOff = document.getElementById('includeSubdivisionsInCountOff');
   const resetMute = document.getElementById('resetMute');
+  const stopAtLimit = document.getElementById('stopAtLimit');
+  const stopAfterMinutes = document.getElementById('stopAfterMinutes');
 
-  // Bias sync
-  function clampBias(v){
+  // Blur sliders after use so spacebar controls transport
+  document.querySelectorAll('input[type="range"]').forEach(r => {
+    const blurIt = () => r.blur();
+    r.addEventListener('mouseup', blurIt);
+    r.addEventListener('touchend', blurIt);
+    r.addEventListener('change', blurIt);
+  });
+
+  // Number inputs: select value on focus/click so typing replaces it,
+  // but do not interfere with spinner behavior (no preventDefault).
+  document.querySelectorAll('input[type="number"]').forEach(n => {
+    n.addEventListener('focus', () => {
+      setTimeout(() => n.select(), 0);
+    });
+    n.addEventListener('mouseup', () => {
+      // After a click into the field, re-select the value so typing replaces it,
+      // while still allowing the browser to handle spinner clicks normally.
+      setTimeout(() => {
+        if (document.activeElement === n) {
+          n.select();
+        }
+      }, 0);
+    });
+  });
+
+  function isNum(v){ return v !== '' && v !== null && v !== undefined && !isNaN(Number(v)); }
+  function getHalfMode(){ return !!(allowHalfSteps && allowHalfSteps.checked); }
+  function roundToTempoUnit(v){
     v = Number(v);
     if (!Number.isFinite(v)) v = 0;
-    v = Math.round(v);
-    if (v < -100) v = -100;
-    if (v > 100) v = 100;
-    return v;
+    if (getHalfMode()){
+      return Math.round(v * 2) / 2;
+    }
+    return Math.round(v);
   }
-  let syncingBias = false;
-  function setBias(v){
-    syncingBias = true;
-    const vv = clampBias(v);
-    biasPct.value = String(vv);
-    biasSlider.value = String(vv);
-    syncingBias = false;
+  function formatTempoValue(v){
+    const val = roundToTempoUnit(v);
+    if (getHalfMode() && val % 1 !== 0){
+      return val.toFixed(1);
+    }
+    return String(Math.round(val));
   }
-  function onBiasSlider(){ if (!syncingBias) setBias(biasSlider.value); }
-  biasSlider.addEventListener('input', onBiasSlider);
-  biasSlider.addEventListener('change', onBiasSlider);
-  setBias(biasPct.value || 0);
+  function getStepUnit(){
+    return getHalfMode() ? 0.5 : 1;
+  }
 
-  // Helpers
-  function isNum(v){ return v !== '' && v !== null && v !== undefined && !isNaN(Number(v)); }
-  const rint = (v)=> String(Math.round(Number(v)));
+  // Bias Down/Up
+  let biasDownValue = 50;
+  function syncBiasUI(){
+    const down = Math.min(100, Math.max(0, Math.round(biasDownValue)));
+    const up = 100 - down;
+    biasDown.value = String(down);
+    biasUp.value = String(up);
+    biasSlider.value = String(up); // slider shows Up%
+  }
+  function setBiasFromDown(raw){
+    const v = Number(raw);
+    if (!Number.isFinite(v)) return;
+    biasDownValue = Math.min(100, Math.max(0, Math.round(v)));
+    syncBiasUI();
+  }
+  function setBiasFromUp(raw){
+    const v = Number(raw);
+    if (!Number.isFinite(v)) return;
+    const up = Math.min(100, Math.max(0, Math.round(v)));
+    biasDownValue = 100 - up;
+    syncBiasUI();
+  }
+  biasSlider.addEventListener('input', ()=>{ setBiasFromUp(biasSlider.value); });
+  syncBiasUI();
 
-  // Commit-only range logic for Start/Min/Max
   let syncingRange = false;
   function enforceRange(sourceId){
     if (syncingRange) return;
@@ -363,38 +491,57 @@
     let startV = Number(startTempo.value);
 
     if (sourceId === 'maxTempo') {
-      if (maxV < minV) { minV = maxV; minTempo.value = rint(minV); }
-      if (startV < minV || startV > maxV) { startV = minV; startTempo.value = rint(startV); }
+      if (maxV < minV) { minV = maxV; }
+      if (startV < minV || startV > maxV) { startV = minV; }
     } else if (sourceId === 'minTempo') {
-      if (minV > maxV) { maxV = minV; maxTempo.value = rint(maxV); }
-      if (startV < minV || startV > maxV) { startV = minV; startTempo.value = rint(startV); }
+      if (minV > maxV) { maxV = minV; }
+      if (startV < minV || startV > maxV) { startV = minV; }
     } else if (sourceId === 'startTempo') {
-      // Expand range to include start, without altering start
-      if (startV < minV) { minV = startV; minTempo.value = rint(minV); }
-      if (startV > maxV) { maxV = startV; maxTempo.value = rint(maxV); }
+      if (startV < minV) { minV = startV; }
+      if (startV > maxV) { maxV = startV; }
     } else {
-      // Generic init
-      if (minV > maxV) { maxV = minV; maxTempo.value = rint(maxV); }
-      if (startV < minV || startV > maxV) { startV = minV; startTempo.value = rint(startV); }
+      if (minV > maxV) { maxV = minV; }
+      if (startV < minV || startV > maxV) { startV = minV; }
     }
+
+    minV = roundToTempoUnit(minV);
+    maxV = roundToTempoUnit(maxV);
+    startV = roundToTempoUnit(startV);
+
+    minTempo.value = formatTempoValue(minV);
+    maxTempo.value = formatTempoValue(maxV);
+    startTempo.value = formatTempoValue(startV);
 
     syncingRange = false;
   }
 
-  // Keep step range sane on commit
   function enforceStepRange(sourceId){
     let minV = Number(minStep.value);
     let maxV = Number(maxStep.value);
     if (!isNum(minV) || !isNum(maxV)) return;
-    if (minV < 1) minV = 1;
-    if (maxV < 1) maxV = 1;
+
+    const unit = getStepUnit();
+    if (minV < unit) minV = unit;
+    if (maxV < unit) maxV = unit;
     if (minV > maxV){
-      if (sourceId === 'minStep') { maxV = minV; maxStep.value = rint(maxV); }
-      else { minV = maxV; minStep.value = rint(minV); }
-    } else {
-      minStep.value = rint(minV);
-      maxStep.value = rint(maxV);
+      if (sourceId === 'minStep') { maxV = minV; }
+      else { minV = maxV; }
     }
+    minV = Math.round(minV / unit) * unit;
+    maxV = Math.round(maxV / unit) * unit;
+
+    minStep.value = (unit === 0.5 && minV % 1 !== 0) ? minV.toFixed(1) : String(minV);
+    maxStep.value = (unit === 0.5 && maxV % 1 !== 0) ? maxV.toFixed(1) : String(maxV);
+  }
+
+  function applyHalfStepUI(){
+    const unit = getStepUnit();
+    const stepStr = unit === 0.5 ? "0.5" : "1";
+    [startTempo, minTempo, maxTempo, minStep, maxStep].forEach(el=>{
+      if (el) el.step = stepStr;
+    });
+    enforceRange();
+    enforceStepRange();
   }
 
   function bindCommit(el, onCommit){
@@ -415,25 +562,165 @@
     });
   }
 
-  // Start/Min/Max with specialized enforcement
   bindCommit(minTempo, ()=>enforceRange('minTempo'));
   bindCommit(maxTempo, ()=>enforceRange('maxTempo'));
   bindCommit(startTempo, ()=>enforceRange('startTempo'));
 
-  // Other numeric inputs: commit-only behavior + side effects
   bindCommit(beatsPerTempo, ()=>{});
   bindCommit(repeatsPerTempo, ()=>{});
   bindCommit(countInBeats, ()=>{});
   bindCommit(subsPerBeat, ()=>{ buildSubList(); });
   bindCommit(minStep, ()=>{ enforceStepRange('minStep'); });
   bindCommit(maxStep, ()=>{ enforceStepRange('maxStep'); });
-  bindCommit(biasPct, ()=>{ setBias(biasPct.value); }); // sync number -> slider on commit
+  bindCommit(biasDown, ()=>{ setBiasFromDown(biasDown.value); });
+  bindCommit(biasUp, ()=>{ setBiasFromUp(biasUp.value); });
 
-  // Initial pass
+  const STORAGE_KEY = 'airMetronomeState_v1';
+
+  function saveState(){
+    const st = {};
+    st.theme = themeSel.value;
+
+    function grab(el, key){
+      if(!el) return;
+      const type = (el.getAttribute('type') || '').toLowerCase();
+      if(type === 'checkbox'){
+        st[key] = !!el.checked;
+      }else{
+        st[key] = el.value;
+      }
+    }
+
+    grab(allowHalfSteps, 'allowHalfSteps');
+    grab(startTempo, 'startTempo');
+    grab(minTempo, 'minTempo');
+    grab(maxTempo, 'maxTempo');
+    grab(beatsPerTempo, 'beatsPerTempo');
+    grab(repeatsPerTempo, 'repeatsPerTempo');
+    grab(countInBeats, 'countInBeats');
+    grab(minStep, 'minStep');
+    grab(maxStep, 'maxStep');
+    grab(biasDown, 'biasDown');
+    grab(biasUp, 'biasUp');
+    grab(volume, 'volume');
+    grab(subsPerBeat, 'subsPerBeat');
+    grab(applyToCountIn, 'applyToCountIn');
+    grab(includeSubdivisionsInCountOff, 'includeSubdivisionsInCountOff');
+    grab(stopAtLimit, 'stopAtLimit');
+    grab(stopAfterMinutes, 'stopAfterMinutes');
+
+    const mutes = [...subList.querySelectorAll('input[type=checkbox]')].map(cb => cb.checked);
+    st.subMutes = mutes;
+
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(st));
+    }catch(e){}
+  }
+
+  function loadState(){
+    let raw = null;
+    try{
+      raw = localStorage.getItem(STORAGE_KEY);
+    }catch(e){
+      raw = null;
+    }
+    if(!raw){
+      return;
+    }
+    let st;
+    try{
+      st = JSON.parse(raw);
+    }catch(e){
+      return;
+    }
+    if(!st || typeof st !== 'object') return;
+
+    if(st.theme){
+      themeSel.value = st.theme;
+      root.setAttribute('data-theme', themeSel.value);
+    }
+
+    function setVal(el, key){
+      if(!el) return;
+      if(!(key in st)) return;
+      const v = st[key];
+      const type = (el.getAttribute('type') || '').toLowerCase();
+      if(type === 'checkbox'){
+        el.checked = !!v;
+      }else{
+        el.value = String(v);
+      }
+    }
+
+    setVal(allowHalfSteps, 'allowHalfSteps');
+    setVal(startTempo, 'startTempo');
+    setVal(minTempo, 'minTempo');
+    setVal(maxTempo, 'maxTempo');
+    setVal(beatsPerTempo, 'beatsPerTempo');
+    setVal(repeatsPerTempo, 'repeatsPerTempo');
+    setVal(countInBeats, 'countInBeats');
+    setVal(minStep, 'minStep');
+    setVal(maxStep, 'maxStep');
+    setVal(biasDown, 'biasDown');
+    setVal(biasUp, 'biasUp');
+    setVal(volume, 'volume');
+    setVal(subsPerBeat, 'subsPerBeat');
+    setVal(applyToCountIn, 'applyToCountIn');
+    setVal(includeSubdivisionsInCountOff, 'includeSubdivisionsInCountOff');
+    setVal(stopAtLimit, 'stopAtLimit');
+    setVal(stopAfterMinutes, 'stopAfterMinutes');
+
+    // Apply mode-dependent constraints and rebuild subs
+    applyHalfStepUI();
+    enforceRange();
+    enforceStepRange();
+    buildSubList();
+
+    if(Array.isArray(st.subMutes)){
+      const cbs = [...subList.querySelectorAll('input[type=checkbox]')];
+      for(let i=0;i<cbs.length && i<st.subMutes.length;i++){
+        cbs[i].checked = !!st.subMutes[i];
+      }
+    }
+
+    // Show current start tempo in display
+    if(startTempo && tempoNow){
+      tempoNow.textContent = formatTempoValue(startTempo.value || 60);
+    }
+  }
+
+  // Persist on any input/select change
+  document.addEventListener('change', (e)=>{
+    if(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')){
+      saveState();
+    }
+  });
+
+  // Load saved state (if any) after wiring persistence
+  loadState();
+
   enforceRange();
   enforceStepRange();
+  applyHalfStepUI();
 
-  // Reset muting
+  if (allowHalfSteps){
+    allowHalfSteps.addEventListener('change', ()=>{
+      applyHalfStepUI();
+    });
+  }
+
+  function snapStepInputIfNeeded(el){
+    if(getHalfMode()) return;
+    let v = Number(el.value);
+    if(!Number.isFinite(v)) return;
+    const snapped = Math.round(v);
+    if(el.value !== String(snapped)){
+      el.value = String(snapped);
+    }
+  }
+  minStep.addEventListener('input', ()=>{ snapStepInputIfNeeded(minStep); });
+  maxStep.addEventListener('input', ()=>{ snapStepInputIfNeeded(maxStep); });
+
   resetMute.addEventListener('click', () => {
     [...subList.querySelectorAll('input[type=checkbox]')].forEach(cb=>cb.checked=true);
   });
@@ -447,16 +734,12 @@
       li.className='subBox';
       li.innerHTML=`<input type="checkbox" id="${id}" checked aria-label="Subdivision ${i}">`;
       const cb = li.querySelector('input');
-      // Auto-confirm: blur after change so space bar won't re-toggle this checkbox
-      cb.addEventListener('change', () => {
-        cb.blur();
-      });
+      cb.addEventListener('change', () => { cb.blur(); });
       subList.appendChild(li);
     }
   }
   buildSubList();
 
-  // Also blur the two other right-panel checkboxes on change
   includeSubdivisionsInCountOff.addEventListener('change', () => {
     includeSubdivisionsInCountOff.blur();
   });
@@ -464,7 +747,6 @@
     applyToCountIn.blur();
   });
 
-  // AUDIO
   let ctx, buffers={};
   const AC = window.AudioContext || window.webkitAudioContext;
   function ensureCtx(){ if(!ctx){ ctx = new AC(); } return ctx.resume(); }
@@ -499,7 +781,7 @@
     src.connect(g).connect(ctx.destination);
     src.start(Math.max(when, now));
   }
-  // live preview when stopped
+
   let running=false;
   volume.addEventListener('input', ()=>{
     if(!running){
@@ -509,19 +791,53 @@
     }
   });
 
-  // Deterministic scheduler
   let loop=null;
   function clampTempo(v){
-    const lo=+minTempo.value, hi=+maxTempo.value;
-    return Math.min(hi, Math.max(lo, Math.round(v)));
+    let lo = Number(minTempo.value);
+    let hi = Number(maxTempo.value);
+    if (!Number.isFinite(lo)) lo = 20;
+    if (!Number.isFinite(hi)) hi = 300;
+    let val = roundToTempoUnit(v);
+    if (val < lo) val = lo;
+    if (val > hi) val = hi;
+    return val;
   }
+
   function stepSize(){
-    const min=+minStep.value, max=+maxStep.value, bias=+biasPct.value;
-    const pUp=Math.max(0,Math.min(1,0.5+bias/200));
-    const span=Math.max(0,max-min);
-    const size=min+Math.floor(Math.random()*(span+1));
-    return (Math.random()<pUp)? size : -size;
+    let minV = Number(minStep.value);
+    let maxV = Number(maxStep.value);
+    const unit = getStepUnit();
+
+    if (!isNum(minV) || !isNum(maxV)){
+      minV = unit;
+      maxV = unit;
+    }
+    if (minV < unit) minV = unit;
+    if (maxV < unit) maxV = unit;
+    if (minV > maxV){
+      const t = minV;
+      minV = maxV;
+      maxV = t;
+    }
+
+    let size;
+    if (unit === 0.5){
+      const stepsCount = Math.floor((maxV - minV) / unit + 0.0000001);
+      const k = Math.floor(Math.random() * (stepsCount + 1));
+      size = minV + k * unit;
+      size = Math.round(size * 2) / 2;
+    } else {
+      const span = Math.max(0, maxV - minV);
+      const k = Math.floor(Math.random() * (span + 1));
+      size = minV + k;
+    }
+
+    const down = biasDownValue;
+    const pUp = Math.max(0, Math.min(1, (100 - down) / 100));
+    const goUp = Math.random() < pUp;
+    return goUp ? size : -size;
   }
+
   function mutedMask(n){
     const cbs=[...subList.querySelectorAll('input[type=checkbox]')];
     if(cbs.length!==n) return new Array(n).fill(true);
@@ -532,7 +848,6 @@
     if(running) return;
     running=true;
     ensureCtx().then(loadBuffers).then(()=>{
-      // state vars
       let tempo = clampTempo(+startTempo.value||60);
       let bpt   = Math.max(1, +beatsPerTempo.value||4);
       let rptN  = Math.max(1, +repeatsPerTempo.value||1);
@@ -549,11 +864,17 @@
       let state = (ciN>0)? 'countin' : 'beats';
       let ciBeatsLeft=ciN;
       let beatIdx=0;
-      let subSlot = 0; // 0..sub-1 (0 = main beat slot)
+      let subSlot = 0;
       let repsDone=0;
-      let pendingTempo=false;
+      let stopDeadline = null;
+      const stopMinRaw = Number(stopAfterMinutes && stopAfterMinutes.value);
+      const stopSecRaw = (isNum(stopMinRaw) && stopMinRaw > 0) ? stopMinRaw * 60 : 0;
+      if (isNum(stopSecRaw) && stopSecRaw > 0) {
+        stopDeadline = ctx.currentTime + stopSecRaw;
+      }
 
-      tempoNow.textContent = tempo;
+
+      tempoNow.textContent = formatTempoValue(tempo);
       statusEl.textContent = 'Running';
       startBtn.textContent = 'Stop';
 
@@ -565,8 +886,7 @@
       function tempoAdvance(){
         const delta = stepSize();
         tempo = clampTempo(tempo + delta);
-        tempoNow.textContent = tempo;
-        // left-hand values updated on tempo change; right-hand (subs panel) stays live via tick()
+        tempoNow.textContent = formatTempoValue(tempo);
         bpt  = Math.max(1, +beatsPerTempo.value||4);
         rptN = Math.max(1, +repeatsPerTempo.value||1);
         ciN  = Math.max(0, +countInBeats.value||0);
@@ -576,11 +896,14 @@
       const lookahead=0.12;
       function tick(){
         while(next < ctx.currentTime + lookahead){
-          // LIVE read of right-hand (subs) panel
+          if (stopDeadline !== null && next >= stopDeadline) {
+            stop();
+            return;
+          }
           const newSub = Math.max(1, +subsPerBeat.value||1);
           if(newSub !== sub){
             sub = newSub;
-            subSlot = 0;          // resync at a beat boundary
+            subSlot = 0;
             refresh();
           }
           mask  = mutedMask(sub);
@@ -588,17 +911,14 @@
           includeSubsInCI = includeSubdivisionsInCountOff && includeSubdivisionsInCountOff.checked;
 
           if(state==='countin'){
-            // During count-off: optionally include muted subdivisions
             const includeSubsCI = includeSubsInCI;
             if(subSlot===0){
-              // Play the count-off beat
               play('ci', next, 0.95); flash('ci');
               if(includeSubsCI){
-                subSlot = 1;           // step into subdivisions
+                subSlot = 1;
                 subInterval = (60/tempo)/sub;
-                next += subInterval;   // schedule first subdivision slot
+                next += subInterval;
               } else {
-                // No subdivisions in count-off: jump to next whole beat
                 next += (60/tempo);
                 ciBeatsLeft--;
                 if(ciBeatsLeft === 0){
@@ -614,7 +934,6 @@
               subSlot++;
               next += subInterval;
               if(subSlot < sub) continue;
-              // finished all subdivisions for this beat
               ciBeatsLeft--;
               subSlot = 0;
               if(ciBeatsLeft === 0){
@@ -624,10 +943,8 @@
             }
           }
 
-          // beats state
           if(subSlot===0){
-            if(pendingTempo){ tempoAdvance(); pendingTempo=false; }
-            refresh(); // lock intervals for this beat (including current sub)
+            refresh();
             play('beat', next, 0.85); flash('beat');
             subSlot=1;
             next += subInterval; continue;
@@ -638,15 +955,27 @@
             next += subInterval;
             if(subSlot < sub) continue;
           }
-          // beat finished
+
           beatIdx++;
           if(beatIdx < bpt){ subSlot=0; continue; }
 
           // cycle finished
+          beatIdx=0;
           repsDone++;
-          if(repsDone >= rptN){ repsDone=0; pendingTempo=true; }
+          if(repsDone >= rptN){
+            repsDone=0;
+            if (stopAtLimit && stopAtLimit.checked){
+              const mn = Number(minTempo.value);
+              const mx = Number(maxTempo.value);
+              if ((isNum(mn) && tempo <= mn) || (isNum(mx) && tempo >= mx)){
+                stop();
+                return;
+              }
+            }
+            tempoAdvance();
+          }
           ciBeatsLeft=ciN;
-          subSlot=0; // ensure count-in starts at beat boundary
+          subSlot=0;
           state = (ciN>0)? 'countin' : 'beats';
         }
       }
@@ -660,15 +989,13 @@
 
   function stop(){
     running=false;
-    loop && clearInterval(loop); loop=null;
+    if(loop){ clearInterval(loop); loop=null; }
     statusEl.textContent='Stopped';
     startBtn.textContent='Start';
   }
 
-  // Start/Stop button
   startBtn.addEventListener('click', ()=> running?stop():start());
 
-  // Robust space-bar handler
   function isSpaceEvent(e){
     return (
       e.code === 'Space' ||
@@ -679,7 +1006,6 @@
     );
   }
 
-  // Space toggles start/stop; checkboxes do NOT block it
   document.addEventListener('keydown', (e)=>{
     if(!isSpaceEvent(e)) return;
 
@@ -691,12 +1017,19 @@
       if(tag === 'INPUT'){
         const type = (active.getAttribute('type') || '').toLowerCase();
         if(type === 'checkbox' || type === 'radio'){
-          isTyping = false; // allow space to control transport, not the checkbox
+          isTyping = false;
+        } else if(type === 'range' || type === 'number'){
+          // For sliders and numeric boxes, space should control transport,
+          // not attempt to type a space.
+          isTyping = false;
         } else {
-          isTyping = true; // text, number, etc.
+          isTyping = true;
         }
-      } else if(tag === 'TEXTAREA' || tag === 'SELECT'){
+      } else if(tag === 'TEXTAREA'){
         isTyping = true;
+      } else if(tag === 'SELECT'){
+        // Dropdowns shouldn't block transport controls.
+        isTyping = false;
       }
     }
 
